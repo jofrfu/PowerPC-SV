@@ -600,6 +600,171 @@ module instruction_decode(
                             decode_comb.fixed_point.control.result_reg_address = X_form.RT;
                             decode_comb.fixed_point.cmp.BF = X_form.BF;
                         end
+                    // X Form Trap instructions
+                    4:  // tw
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_TRAP;
+                            
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RA;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.trap.TO = X_form.TO;
+                        end
+                    // X Form Logical instructions
+                    26: // cntlzw, cntlzw.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_COUNT_LEADING_ZEROS_WORD;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    28: // and, and.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_AND;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    60: // andc, andc.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_AND_COMPLEMENT;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    124: // nor, nor.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_NOR;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    284: // eqv, eqv.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_EQUIVALENT;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    316: // xor, xor.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_XOR;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    412: // orc, orc.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_OR_COMPLEMENT;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    444: // or, or.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_OR;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    476: // nand, nand.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_NAND;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    922: // extsh, extsh.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_EXTEND_SIGN_HALFWORD;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    954: // extsb, extsb.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                            decode_comb.fixed_point.log.operation = LOG_EXTEND_SIGN_BYTE;
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    // X Form shift instructions
+                    24: // slw, slw.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_ROTATE;
+                            
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.rotate.shift = 1;
+                            decode_comb.fixed_point.rotate.left = 1;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    536: // srw, srw.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_ROTATE;
+                            
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.rotate.shift = 1;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    792: // sraw, sraw.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_ROTATE;
+                            
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.rotate.shift = 1;
+                            decode_comb.fixed_point.rotate.sign_extend = 1;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
+                    824: // srawi, srawi.
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_ROTATE;
+                            
+                            decode_comb.fixed_point.control.op1_reg_address = X_form.RS;
+                            decode_comb.fixed_point.control.op2_use_imm = 1;
+                            decode_comb.fixed_point.control.op2_immediate = X_form.SH;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                            decode_comb.fixed_point.rotate.shift = 1;
+                            decode_comb.fixed_point.rotate.sign_extend = 1;
+                            decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
+                        end
                 endcase
         endcase
     end

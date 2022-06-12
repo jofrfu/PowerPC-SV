@@ -473,7 +473,7 @@ package ppc_types;
 		LOG_AND, LOG_OR, LOG_XOR, LOG_NAND, LOG_NOR,
 		LOG_EQUIVALENT, LOG_AND_COMPLEMENT, LOG_OR_COMPLEMENT,
 		LOG_EXTEND_SIGN_BYTE, LOG_EXTEND_SIGN_HALFWORD, // LOG_EXTEND_SIGN_WORD is not supported
-		LOG_COUNT_LEDING_ZEROS_WORD // LOG_COUNT_LEADING_ZEROS_DOUBLEWORD is not supported
+		LOG_COUNT_LEADING_ZEROS_WORD // LOG_COUNT_LEADING_ZEROS_DOUBLEWORD is not supported
 		// LOG_POPULATION_COUNT_BYTES // popcntb doesn't seem to exist on 32 bit implementations, but it's not mentioned anywhere
 	} logical_op_t;
     
