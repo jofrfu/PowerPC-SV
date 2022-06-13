@@ -765,6 +765,42 @@ module instruction_decode(
                             decode_comb.fixed_point.rotate.sign_extend = 1;
                             decode_comb.fixed_point.log.alter_CR0 = X_form.Rc;
                         end
+                    // XFX Form move system register instructions
+                    19: // mfcr
+                        begin
+                            if(XFX_form.ALWAYS_ZERO == 0) begin
+                                decode_comb.fixed_point.execute = EXEC_SYSTEM;
+                                
+                                decode_comb.fixed_point.system.operation = SYS_MOVE_FROM_CR;
+                                decode_comb.fixed_point.control.op1_reg_address = XFX_form.RT;
+                            end
+                        end
+                    144: // mtcrf
+                        begin
+                            if(XFX_form.ALWAYS_ZERO == 0) begin
+                                decode_comb.fixed_point.execute = EXEC_SYSTEM;
+                                
+                                decode_comb.fixed_point.system.operation = SYS_MOVE_TO_CR;
+                                decode_comb.fixed_point.control.op1_reg_address = XFX_form.RS;
+                                decode_comb.fixed_point.system.FXM = XFX_form.FXM;
+                            end
+                        end
+                    339: // mfspr
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_SYSTEM;
+                            
+                            decode_comb.fixed_point.system.operation = SYS_MOVE_FROM_SPR;
+                            decode_comb.fixed_point.control.op1_reg_address = XFX_form.RT;
+                            decode_comb.fixed_point.system.SPR = XFX_form.spr;
+                        end
+                    339: // mtspr
+                        begin
+                            decode_comb.fixed_point.execute = EXEC_SYSTEM;
+                            
+                            decode_comb.fixed_point.system.operation = SYS_MOVE_TO_SPR;
+                            decode_comb.fixed_point.control.op1_reg_address = XFX_form.RS;
+                            decode_comb.fixed_point.system.SPR = XFX_form.spr;
+                        end
                 endcase
         endcase
     end
