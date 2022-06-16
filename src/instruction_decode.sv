@@ -793,7 +793,7 @@ module instruction_decode(
                             decode_comb.fixed_point.control.op1_reg_address = XFX_form.RT;
                             decode_comb.fixed_point.system.SPR = XFX_form.spr;
                         end
-                    339: // mtspr
+                    467: // mtspr
                         begin
                             decode_comb.fixed_point.execute = EXEC_SYSTEM;
                             
@@ -801,7 +801,260 @@ module instruction_decode(
                             decode_comb.fixed_point.control.op1_reg_address = XFX_form.RS;
                             decode_comb.fixed_point.system.SPR = XFX_form.spr;
                         end
+                    // X Form floating point Load/Store instructions
+                    // TODO: Implement
                 endcase
+            // D Form load instructions
+            32: // lwz
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            33: // lwzu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            34: // lbz
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 1, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            35: // lbzu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 1, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            40: // lhz
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            41: // lhzu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            42: // lha
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 0, 1, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            43: // lhau
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 1, 1, 0);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            // D Form store instructions
+            36: // stw
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            37: // stwu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            38: // stb
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 1, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            39: // stbu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 1, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            44: // sth
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 0, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            45: // sthu
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 2, 1, 0, 0);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            // D Form multiple load/store instructions
+            46: // lmw
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 1);
+                    decode_comb.fixed_point.execute = EXEC_LOAD;
+                end
+            47: // stmw
+                begin
+                    decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 1);
+                    decode_comb.fixed_point.execute = EXEC_STORE;
+                end
+            // D Form Add/Sub instructions
+            8:  // subfic
+                begin
+                    decode_comb.fixed_point.execute = EXEC_ADD_SUB;
+                            
+                    decode_comb.fixed_point.add_sub.subtract = 1;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.add_sub.alter_CA = 1;
+                end
+            12:  // addic
+                begin
+                    decode_comb.fixed_point.execute = EXEC_ADD_SUB;
+                            
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.add_sub.alter_CA = 1;
+                end
+            13:  // addic.
+                begin
+                    decode_comb.fixed_point.execute = EXEC_ADD_SUB;
+                            
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.add_sub.alter_CA = 1;
+                    decode_comb.fixed_point.add_sub.alter_CR0 = 1;
+                end
+            14:  // addi
+                begin
+                    decode_comb.fixed_point.execute = EXEC_ADD_SUB;
+                    
+                    if(D_form.RA == 0) begin
+                        decode_comb.fixed_point.control.op1_use_imm = 1; // Immediate is zero by default
+                    end else begin
+                        decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    end
+                    
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                end
+            15:  // addis
+                begin
+                    decode_comb.fixed_point.execute = EXEC_ADD_SUB;
+                    
+                    if(D_form.RA == 0) begin
+                        decode_comb.fixed_point.control.op1_use_imm = 1; // Immediate is zero by default
+                    end else begin
+                        decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    end
+                    
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {D_form.SI, 16'b0};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                end
+            // D Form Mul instructions
+            7:  // mulli
+                begin
+                    decode_comb.fixed_point.execute = EXEC_MUL;
+                    
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.mul.mul_signed = 1;
+                end
+            // D Form Cmp instructions
+            10: // cmpli
+                begin
+                    // L is unused in 32 Bit implementations
+                    decode_comb.fixed_point.execute = EXEC_COMPARE;
+                    
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = D_form.UI;
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.cmp.BF = D_form.BF;
+                end
+            11: // cmpi
+                begin
+                    // L is unused in 32 Bit implementations
+                    decode_comb.fixed_point.execute = EXEC_COMPARE;
+                    
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
+                    decode_comb.fixed_point.cmp.BF = D_form.BF;
+                end
+            // D Form Trap instructions
+            3: // twi
+                begin
+                    decode_comb.fixed_point.execute = EXEC_TRAP;
+                            
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
+                    decode_comb.fixed_point.trap.TO = D_form.TO;
+                end
+            // D Form Logical instructions
+            24: // ori
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_OR;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = D_form.UI;
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                end
+            25: // oris
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_OR;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {D_form.UI, 16'b0};
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                end
+            26: // xori
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_XOR;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = D_form.UI;
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                end
+            27: // xoris
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_XOR;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {D_form.UI, 16'b0};
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                end
+            28: // andi.
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_AND;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = D_form.UI;
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                    decode_comb.fixed_point.log.alter_CR0 = 1;
+                end
+            29: // andis.
+                begin
+                    decode_comb.fixed_point.execute = EXEC_LOGICAL;
+                            
+                    decode_comb.fixed_point.log.operation = LOG_AND;
+                    decode_comb.fixed_point.control.op1_reg_address = D_form.RS;
+                    decode_comb.fixed_point.control.op2_use_imm = 1;
+                    decode_comb.fixed_point.control.op2_immediate = {D_form.UI, 16'b0};
+                    decode_comb.fixed_point.control.result_reg_address = X_form.RA;
+                    decode_comb.fixed_point.log.alter_CR0 = 1;
+                end
         endcase
     end
     
