@@ -30,21 +30,21 @@ module instruction_decode(
     always_comb
     begin
         // Convert the instruction in each format for convinience
-        static I_form_t I_form = logic_to_I_form(instruction);
-        static B_form_t B_form = logic_to_B_form(instruction);
-        static SC_form_t SC_form = logic_to_SC_form(instruction);
-        static D_form_t D_form = logic_to_D_form(instruction);
-        static DS_form_t DS_form = logic_to_DS_form(instruction);
-        static X_form_t X_form = logic_to_X_form(instruction);
-        static XL_form_t XL_form = logic_to_XL_form(instruction);
-        static XFX_form_t XFX_form = logic_to_XFX_form(instruction);
-        static XFL_form_t XFL_form = logic_to_XFL_form(instruction);
-        static XS_form_t XS_form = logic_to_XS_form(instruction);
-        static XO_form_t XO_form = logic_to_XO_form(instruction);
-        static A_form_t A_form = logic_to_A_form(instruction);
-        static M_form_t M_form = logic_to_M_form(instruction);
-        static MD_form_t MD_form = logic_to_MD_form(instruction);
-        static MDS_form_t MDS_form = logic_to_MDS_form(instruction);
+        I_form_t I_form = logic_to_I_form(instruction);
+        B_form_t B_form = logic_to_B_form(instruction);
+        SC_form_t SC_form = logic_to_SC_form(instruction);
+        D_form_t D_form = logic_to_D_form(instruction);
+        DS_form_t DS_form = logic_to_DS_form(instruction);
+        X_form_t X_form = logic_to_X_form(instruction);
+        XL_form_t XL_form = logic_to_XL_form(instruction);
+        XFX_form_t XFX_form = logic_to_XFX_form(instruction);
+        XFL_form_t XFL_form = logic_to_XFL_form(instruction);
+        XS_form_t XS_form = logic_to_XS_form(instruction);
+        XO_form_t XO_form = logic_to_XO_form(instruction);
+        A_form_t A_form = logic_to_A_form(instruction);
+        M_form_t M_form = logic_to_M_form(instruction);
+        MD_form_t MD_form = logic_to_MD_form(instruction);
+        MDS_form_t MDS_form = logic_to_MDS_form(instruction);
         //-----------------------------------------------------
         
         decode_comb = {default: {default: '0}};

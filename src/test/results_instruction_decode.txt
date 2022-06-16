@@ -1,0 +1,77 @@
+{
+    '{
+        default: '0,
+        branch: {
+            execute: EXEC_BRANCH,
+            branch_decoded: {
+                operation: BRANCH,
+                LK: 0,
+                AA: 0,
+                LI: 2736180 >> 2,
+                BD: 0,
+                BI: 0,
+                BO: 0,
+                BH: 0
+            },
+            system_call_decoded: '0,
+            condition_decoded: '0
+        }            
+    },
+    
+    '{
+        default: '0,
+        branch: {
+            execute: EXEC_BRANCH,
+            branch_decoded: {
+                operation: BRANCH,
+                LK: 0,
+                AA: 1,
+                LI: 2736180 >> 2,
+                BD: 0,
+                BI: 0,
+                BO: 0,
+                BH: 0
+            },
+            system_call_decoded: '0,
+            condition_decoded: '0
+        }            
+    },
+    
+    '{
+        default: '0,
+        branch: {
+            execute: EXEC_BRANCH,
+            branch_decoded: {
+                operation: BRANCH,
+                LK: 1,
+                AA: 0,
+                LI: 2736180 >> 2,
+                BD: 0,
+                BI: 0,
+                BO: 0,
+                BH: 0
+            },
+            system_call_decoded: '0,
+            condition_decoded: '0
+        }            
+    },
+    
+    '{
+        default: '0,
+        branch: {
+            execute: EXEC_BRANCH,
+            branch_decoded: {
+                operation: BRANCH,
+                LK: 1,
+                AA: 1,
+                LI: 2736180 >> 2,
+                BD: 0,
+                BI: 0,
+                BO: 0,
+                BH: 0
+            },
+            system_call_decoded: '0,
+            condition_decoded: '0
+        }            
+    }
+};
