@@ -56,8 +56,25 @@ module tb_instruction_decode;
             
             case(a.branch.execute)
                 EXEC_BRANCH:
+                    begin
+                        if(a.branch.branch_decoded.operation != a.branch.branch_decoded.operation) return 0;
+                        if(a.branch.branch_decoded.LK != b.branch.branch_decoded.LK) return 0;
+                        if(a.branch.branch_decoded.AA != b.branch.branch_decoded.AA) return 0;
+                        if(a.branch.branch_decoded.LI != b.branch.branch_decoded.LI) return 0;
+                        if(a.branch.branch_decoded.BD != b.branch.branch_decoded.BD) return 0;
+                        if(a.branch.branch_decoded.BI != b.branch.branch_decoded.BI) return 0;
+                        if(a.branch.branch_decoded.BO != b.branch.branch_decoded.BO) return 0;
+                        if(a.branch.branch_decoded.BH != b.branch.branch_decoded.BH) return 0;
+                    end
                 EXEC_SYSTEM_CALL:
+                    if(a.branch.system_call_decoded != b.branch.system_call_decoded) return 0;
                 EXEC_CONDITION:
+                    begin
+                        if(a.branch.condition_decoded.operation != b.branch.condition_decoded.operation) return 0;
+                        if(a.branch.condition_decoded.CR_op1_reg_address != b.branch.condition_decoded.CR_op1_reg_address) return 0;
+                        if(a.branch.condition_decoded.CR_op2_reg_address != b.branch.condition_decoded.CR_op2_reg_address) return 0;
+                        if(a.branch.condition_decoded.CR_result_reg_address != b.branch.condition_decoded.CR_result_reg_address) return 0;
+                    end
             endcase
                 
         end else if(a.fixed_point.execute != EXEC_FIXED_NONE || b.fixed_point.execute != EXEC_FIXED_NONE 
@@ -66,25 +83,29 @@ module tb_instruction_decode;
                 return 0;
             end
         end // TODO: add floating point
+        return 1;
     endfunction
     
     always #10 clk = ~clk;
     
     initial begin
-        clk <= 0;
-        rst <= 0;
-        instruction <= 0;
+        clk = 0;
+        rst = 0;
+        instruction = 0;
         @(posedge clk);
-        rst <= 1;
+        rst = 1;
         @(posedge clk);
-        rst <= 0;
+        rst = 0;
+        @(posedge clk);
+        @(posedge clk);
         @(posedge clk);
         
         for(int i = 0; i < 4; i++) begin
-            instruction <= stimuli[i];
+            instruction = stimuli[i];
             @(posedge clk);
-            if(decode != results[i]) begin
-                $display("Not equal!");
+            #5
+            if(~compare(decode, results[i])) begin
+                $display("Not equal at %d!", i);
             end
         end
     end
