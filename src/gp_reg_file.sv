@@ -15,25 +15,46 @@
 ==============================================================================*/
 
 module gp_reg_file #(
-    parameter int READ_PORTS = 3
+    parameter int READ_PORTS = 3,
+    parameter int RS_ID_WIDTH = 5
 )(
     input logic clk,
     input logic rst,
     
-    input logic[0:4] read_select[0:READ_PORTS-1],
-    output logic[0:31] read_data[0:READ_PORTS-1],
+    // Read ports are used to read all information about registers
+    // inlcuding which reservation station holds the data, if the register content is invalid
+    input logic[0:4]                read_addr[0:READ_PORTS-1],
+    output logic                    read_value_valid[0:READ_PORTS-1],
+    output logic[0:31]              read_value[0:READ_PORTS-1],
+    output logic[0:RS_ID_WIDTH-1]   read_rs_id[0:READ_PORTS-1],
     
-    input logic[0:4] write_select,
-    input logic[0:4] write_enable,
-    input logic[0:31] write_data
+    // The write port stores the result of units
+    input logic[0:4]                write_addr,
+    input logic                     write_enable,
+    input logic[0:31]               write_value,
+    
+    // The update port is used to invalidate data and assign the ID of the reservation station
+    // which currently calculates the content of that register
+    input logic[0:4]                update_addr,
+    input logic                     update_enable,
+    input logic[0:RS_ID_WIDTH-1]    update_rs_id
 );
-
-    logic[0:31] registers_ff[0:31];
+    
+    typedef struct packed {
+        logic value_valid;  // Denotes, if the register content is valid or hold by a reservation station
+        logic[0:31] value;  // The actual content of a register
+        logic[0:RS_ID_WIDTH-1] rs_id;   // The ID of the reservation station
+                                        // which holds the instruction to calculate the content of the register
+    } register_t;
+    
+    register_t registers_ff[0:31];
     
     always_comb
     begin
         for(int i = 0; i < READ_PORTS; i++) begin
-            read_data[i] <= registers_ff[read_select[i]];
+            read_value_valid[i] <= registers_ff[read_addr[i]].value_valid;
+            read_value[i]       <= registers_ff[read_addr[i]].value;
+            read_rs_id[i]       <= registers_ff[read_addr[i]].rs_id;
         end
     end
     
@@ -42,8 +63,18 @@ module gp_reg_file #(
         if(rst) begin
             registers_ff <= {default: {default: '0}};
         end
-        else if(write_enable) begin
-            registers_ff[write_select] <= write_data;
+        else begin
+            if(write_enable) begin
+                // Write and validate the register content
+                registers_ff[write_addr].value          <= write_value;
+                registers_ff[write_addr].value_valid    <= 1;
+            end
+            
+            if(update_enable) begin
+                // Invalidate the register content and update the reservation station ID
+                registers_ff[update_addr].value_valid   <= 0;
+                registers_ff[update_addr].rs_id         <= update_rs_id;
+            end
         end
     end
 endmodule
