@@ -46,6 +46,7 @@ module tb_reservation_station;
     
     logic[0:31]  op_value_out[0:1];
     add_sub_decode_t control_out;
+    logic[0:4]    update_rs_id;
     //-----------------------------------------------------
     
     reservation_station #(

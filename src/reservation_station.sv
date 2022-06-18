@@ -49,8 +49,9 @@ module reservation_station #(
     output logic        output_valid,
     input logic         output_ready,
     
-    output logic[0:31]  op_value_out[0:OPERANDS-1],
-    output CONTROL_TYPE control_out
+    output logic[0:31]              op_value_out[0:OPERANDS-1],
+    output CONTROL_TYPE             control_out,
+    output logic[0:RS_ID_WIDTH-1]   op_rs_id_out
     //-----------------------------------------------------
 );
 
@@ -110,7 +111,8 @@ module reservation_station #(
     
     assign output_valid = can_dispatch;
     assign op_value_out = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value;
-    assign control_out = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
+    assign control_out  = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
+    assign op_rs_id_out = id_dispatch;
     //------------------------------------
     
     always_ff @(posedge clk)
@@ -121,16 +123,16 @@ module reservation_station #(
         else begin
             // Add the request, if an entry is available
             if(can_take && take_valid) begin
-                reservation_stations_ff[id_take - RS_OFFSET].valid <= 1;
-                reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
+                reservation_stations_ff[id_take - RS_OFFSET].valid          <= 1;
+                reservation_stations_ff[id_take - RS_OFFSET].control        <= control_in;
                 reservation_stations_ff[id_take - RS_OFFSET].op_value_valid <= op_value_valid_in;
-                reservation_stations_ff[id_take - RS_OFFSET].op_rs_id <= op_rs_id_in;
-                reservation_stations_ff[id_take - RS_OFFSET].op_value <= op_value_in;
+                reservation_stations_ff[id_take - RS_OFFSET].op_rs_id       <= op_rs_id_in;
+                reservation_stations_ff[id_take - RS_OFFSET].op_value       <= op_value_in;
             end
             
             // Reset the entry, if it was dispatched
             if(can_dispatch && output_ready) begin
-                reservation_stations_ff[id_dispatch - RS_OFFSET].valid <= 0;
+                reservation_stations_ff[id_dispatch - RS_OFFSET].valid      <= 0;
             end
             
             // Update the values of registers in the reservation stations
@@ -139,8 +141,8 @@ module reservation_station #(
                     for(int j = 0; j < OPERANDS; j++) begin
                         if(reservation_stations_ff[i].valid && ~reservation_stations_ff[i].op_value_valid[j]) begin
                             if(reservation_stations_ff[i].op_rs_id[j] == update_op_rs_id_in) begin
-                                reservation_stations_ff[i].op_value_valid[j] <= 1;
-                                reservation_stations_ff[i].op_value[j] <= update_op_value_in;
+                                reservation_stations_ff[i].op_value_valid[j]    <= 1;
+                                reservation_stations_ff[i].op_value[j]          <= update_op_value_in;
                             end
                         end
                     end
