@@ -74,11 +74,10 @@ module reservation_station #(
     begin
         can_take = 0;
         id_take = RS_OFFSET;
-        for(int i = 0; i < RS_DEPTH; i++) begin
+        for(int i = RS_DEPTH-1; i >= 0; i--) begin
             if(~reservation_stations_ff[i].valid) begin
                 can_take = 1;
                 id_take = i + RS_OFFSET;
-                break;
             end
         end
     end
@@ -95,7 +94,7 @@ module reservation_station #(
     begin
         can_dispatch = 0;
         id_dispatch = RS_OFFSET;
-        for(int i = 0; i < RS_DEPTH; i++) begin
+        for(int i = RS_DEPTH-1; i >= 0; i--) begin
             logic and_reduced = reservation_stations_ff[i].valid;
             for(int j = 0; j < OPERANDS; j++) begin
                 // Check if all values of valid reservation stations are present
@@ -105,12 +104,11 @@ module reservation_station #(
             if(and_reduced) begin
                 can_dispatch = 1;
                 id_dispatch = i + RS_OFFSET;
-                break;
             end
         end
     end
     
-    assign output_valid = can_dispatch & output_ready;
+    assign output_valid = can_dispatch;
     assign op_value_out = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value;
     assign control_out = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
     //------------------------------------
@@ -122,7 +120,7 @@ module reservation_station #(
         end
         else begin
             // Add the request, if an entry is available
-            if(can_take & take_valid) begin
+            if(can_take && take_valid) begin
                 reservation_stations_ff[id_take - RS_OFFSET].valid <= 1;
                 reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
                 reservation_stations_ff[id_take - RS_OFFSET].op_value_valid <= op_value_valid_in;
@@ -131,7 +129,7 @@ module reservation_station #(
             end
             
             // Reset the entry, if it was dispatched
-            if(can_dispatch & output_ready) begin
+            if(can_dispatch && output_ready) begin
                 reservation_stations_ff[id_dispatch - RS_OFFSET].valid <= 0;
             end
             
@@ -139,7 +137,7 @@ module reservation_station #(
             if(operand_valid) begin
                 for(int i = 0; i < RS_DEPTH; i++) begin
                     for(int j = 0; j < OPERANDS; j++) begin
-                        if(reservation_stations_ff[i].valid & ~reservation_stations_ff[i].op_value_valid[j]) begin
+                        if(reservation_stations_ff[i].valid && ~reservation_stations_ff[i].op_value_valid[j]) begin
                             if(reservation_stations_ff[i].op_rs_id[j] == update_op_rs_id_in) begin
                                 reservation_stations_ff[i].op_value_valid[j] <= 1;
                                 reservation_stations_ff[i].op_value[j] <= update_op_value_in;
