@@ -111,6 +111,7 @@ module add_sub_unit #(
         // Set valid signals
         cr0_xer_comb.CA_valid = control_stages_ff[2].alter_CA;
         cr0_xer_comb.OV_valid = control_stages_ff[2].alter_OV;
+        cr0_xer_comb.CR0_valid = control_stages_ff[2].alter_CR0;
     end
     
     
@@ -132,7 +133,7 @@ module add_sub_unit #(
             carry_propagate_ff  <= 0;
             
             result <= 0;
-            cr0_xer <= {default: {default: '0}};
+            cr0_xer <= {default: '0};
         end
         else begin
             valid_stages_ff[0]              <= input_valid;
