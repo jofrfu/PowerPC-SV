@@ -95,14 +95,8 @@ module reservation_station #(
     begin
         can_dispatch = 0;
         id_dispatch = RS_OFFSET;
-        for(int i = RS_DEPTH-1; i >= 0; i--) begin
-            logic and_reduced = reservation_stations_ff[i].valid;
-            for(int j = 0; j < OPERANDS; j++) begin
-                // Check if all values of valid reservation stations are present
-                and_reduced = and_reduced & reservation_stations_ff[i].op_value_valid[j];
-            end
-            
-            if(and_reduced) begin
+        for(int i = RS_DEPTH-1; i >= 0; i--) begin            
+            if(Reduction#(OPERANDS)::and_reduce(reservation_stations_ff[i].op_value_valid) & reservation_stations_ff[i].valid) begin
                 can_dispatch = 1;
                 id_dispatch = i + RS_OFFSET;
             end

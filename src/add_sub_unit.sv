@@ -23,6 +23,7 @@ module add_sub_unit #(
     input logic rst,
     
     input logic input_valid,
+    output logic input_ready,
     input logic[0:RS_ID_WIDTH-1] rs_id_in,
     input logic[0:4] result_reg_addr_in,
     
@@ -32,6 +33,7 @@ module add_sub_unit #(
     input add_sub_decode_t control,
     
     output logic output_valid,
+    input logic output_ready,
     output logic[0:RS_ID_WIDTH-1] rs_id_out,
     output logic[0:4] result_reg_addr_out,
     
@@ -115,6 +117,25 @@ module add_sub_unit #(
     end
     
     
+    logic pipe_enable[0:3];
+    
+    always_comb
+    begin
+        if(output_ready) begin
+            pipe_enable = {default: '1};
+            input_ready = 1;
+        end
+        else begin
+            pipe_enable[3] = Reduction#(3)::or_reduce(valid_stages_ff[0:2]) | input_valid & ~valid_stages_ff[3];
+            pipe_enable[2] = Reduction#(2)::or_reduce(valid_stages_ff[0:1]) | input_valid & ~valid_stages_ff[2];
+            pipe_enable[1] = valid_stages_ff[0] | input_valid & ~valid_stages_ff[1];
+            pipe_enable[0] = input_valid & ~valid_stages_ff[0];
+            
+            // If data can move in the pipeline, we can still take input data
+            input_ready = Reduction#(4)::or_reduce(pipe_enable);
+        end
+    end
+    
     always_ff @(posedge clk)
     begin
         if(rst) begin
@@ -136,31 +157,49 @@ module add_sub_unit #(
             cr0_xer <= {default: '0};
         end
         else begin
-            valid_stages_ff[0]              <= input_valid;
-            rs_id_stages_ff[0]              <= rs_id_in;
-            result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
-            control_stages_ff[0]            <= control;
+            if(pipe_enable[0]) begin
+                valid_stages_ff[0]              <= input_valid;
+                rs_id_stages_ff[0]              <= rs_id_in;
+                result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
+                control_stages_ff[0]            <= control;
+                
+                carry_ff[0] <= carry_in;
+                op1_ff[0]   <= op1;
+                op2_ff[0]   <= op2;
+            end
             
-            valid_stages_ff[1:3]            <= valid_stages_ff[0:2];
-            rs_id_stages_ff[1:3]            <= rs_id_stages_ff[0:2];
-            result_reg_addr_stages_ff[1:3]  <= result_reg_addr_stages_ff[0:2];
-            control_stages_ff[1:2]          <= control_stages_ff[0:1];
+            if(pipe_enable[1]) begin
+                valid_stages_ff[1]            <= valid_stages_ff[0];
+                rs_id_stages_ff[1]            <= rs_id_stages_ff[0];
+                result_reg_addr_stages_ff[1]  <= result_reg_addr_stages_ff[0];
+                control_stages_ff[1]          <= control_stages_ff[0];
+                
+                carry_ff[1] <= carry_comb;
+                op1_ff[1] <= op1_comb;
+                op2_ff[1] <= op2_ff[0];
+            end
             
-            carry_ff[0] <= carry_in;
-            carry_ff[1] <= carry_comb;
-            carry_ff[2] <= carry_ff[1];
+            if(pipe_enable[2]) begin
+                valid_stages_ff[2]            <= valid_stages_ff[1];
+                rs_id_stages_ff[2]            <= rs_id_stages_ff[1];
+                result_reg_addr_stages_ff[2]  <= result_reg_addr_stages_ff[1];
+                control_stages_ff[2]          <= control_stages_ff[1];
+                
+                carry_ff[2] <= carry_ff[1];
+                
+                sum_ff              <= sum_comb;
+                carry_generate_ff   <= carry_generate_comb;
+                carry_propagate_ff  <= carry_propagate_comb;
+            end
             
-            op1_ff[0] <= op1;
-            op2_ff[0] <= op2;
-            op1_ff[1] <= op1_comb;
-            op2_ff[1] <= op2_ff[0];
-            
-            sum_ff              <= sum_comb;
-            carry_generate_ff   <= carry_generate_comb;
-            carry_propagate_ff  <= carry_propagate_comb;
-            
-            result <= result_comb;
-            cr0_xer <= cr0_xer_comb;
+            if(pipe_enable[3]) begin
+                valid_stages_ff[3]            <= valid_stages_ff[2];
+                rs_id_stages_ff[3]            <= rs_id_stages_ff[2];
+                result_reg_addr_stages_ff[3]  <= result_reg_addr_stages_ff[2];
+                
+                result <= result_comb;
+                cr0_xer <= cr0_xer_comb;
+            end
         end
     end
 endmodule

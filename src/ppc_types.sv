@@ -583,4 +583,22 @@ package ppc_types;
         logic CR0_valid;
     } cond_exception_t;
     // ------ Types for fixed point units END ------
+    
+    virtual class Reduction #(parameter WIDTH=32);
+        static function logic or_reduce(input logic x[0:WIDTH-1]);
+            logic res = x[0];
+            for(int i = 1; i < WIDTH; i++) begin
+                res |= x[i];
+            end
+            return res;
+        endfunction
+    
+        static function logic and_reduce(input logic x[0:WIDTH-1]);
+            logic res = x[0];
+            for(int i = 1; i < WIDTH; i++) begin
+                res &= x[i];
+            end
+            return res;
+        endfunction
+    endclass
 endpackage
