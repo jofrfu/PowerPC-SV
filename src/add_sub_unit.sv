@@ -121,19 +121,13 @@ module add_sub_unit #(
     
     always_comb
     begin
-        if(output_ready) begin
-            pipe_enable = {default: '1};
-            input_ready = 1;
-        end
-        else begin
-            pipe_enable[3] = Reduction#(3)::or_reduce(valid_stages_ff[0:2]) | input_valid & ~valid_stages_ff[3];
-            pipe_enable[2] = Reduction#(2)::or_reduce(valid_stages_ff[0:1]) | input_valid & ~valid_stages_ff[2];
-            pipe_enable[1] = valid_stages_ff[0] | input_valid & ~valid_stages_ff[1];
-            pipe_enable[0] = input_valid & ~valid_stages_ff[0];
-            
-            // If data can move in the pipeline, we can still take input data
-            input_ready = Reduction#(4)::or_reduce(pipe_enable);
-        end
+        pipe_enable[3] = (~valid_stages_ff[3] & valid_stages_ff[2]) | (output_ready & valid_stages_ff[3]);
+        pipe_enable[2] = (~valid_stages_ff[2] & valid_stages_ff[1]) | (pipe_enable[3] & valid_stages_ff[2]);
+        pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (pipe_enable[2] & valid_stages_ff[1]);
+        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
+             
+        // If data can move in the pipeline, we can still take input data
+        input_ready = Reduction#(4)::or_reduce(pipe_enable);
     end
     
     always_ff @(posedge clk)

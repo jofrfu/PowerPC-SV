@@ -46,7 +46,8 @@ module tb_reservation_station;
     
     logic[0:31]  op_value_out[0:1];
     add_sub_decode_t control_out;
-    logic[0:4]    update_rs_id;
+    //logic[0:4]    update_rs_id;
+    logic[0:4]   op_rs_id_out;
     //-----------------------------------------------------
     
     reservation_station #(
@@ -83,6 +84,7 @@ module tb_reservation_station;
         @(posedge clk);
         @(posedge clk);
         for(int i = 0; i < 10; i++) begin
+            #2
             if(take_ready) begin
                 take_valid = 1;
                 op_value_valid_in = {1,1};
@@ -96,15 +98,18 @@ module tb_reservation_station;
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        #2
         output_ready = 1;
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        #2
         output_ready = 0;
         take_valid = 0;
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        #2
         output_ready = 1;
         @(posedge clk);
         @(posedge clk);
@@ -115,6 +120,7 @@ module tb_reservation_station;
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        #2
         if(take_ready) begin
             take_valid = 1;
             op_value_valid_in = {1,0};
@@ -124,25 +130,32 @@ module tb_reservation_station;
             control_in.add_CA = 1;
         end
         @(posedge clk);
+        #2
         take_valid = 0;
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        #2
         operand_valid = 1;
         update_op_rs_id_in = 4;
         update_op_value_in = 12;
         @(posedge clk);
+        #2
         operand_valid = 0;
         @(posedge clk);
+        #2
         operand_valid = 1;
         update_op_rs_id_in = 5;
         update_op_value_in = 16;
         @(posedge clk);
+        #2
         operand_valid = 0;
         @(posedge clk);
+        #2
         output_ready = 0;
         @(posedge clk);
         @(posedge clk);
+        #2
         if(take_ready) begin
             take_valid = 1;
             op_value_valid_in = {1,0};
@@ -152,13 +165,16 @@ module tb_reservation_station;
             control_in.add_CA = 1;
         end
         @(posedge clk);
+        #2
         take_valid = 0;
         @(posedge clk);
         @(posedge clk);
+        #2
         operand_valid = 1;
         update_op_rs_id_in = 5;
         update_op_value_in = 16;
         @(posedge clk);
+        #2
         operand_valid = 0;
         @(posedge clk);
     end

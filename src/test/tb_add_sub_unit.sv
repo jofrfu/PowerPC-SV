@@ -23,6 +23,7 @@ module tb_add_sub_unit();
     logic rst;
     
     logic input_valid;
+    logic input_ready;
     logic[0:4] rs_id_in;
     logic[0:4] result_reg_addr_in;
     
@@ -32,6 +33,7 @@ module tb_add_sub_unit();
     add_sub_decode_t control;
     
     logic output_valid;
+    logic output_ready;
     logic[0:4] rs_id_out;
     logic[0:4] result_reg_addr_out;
     
@@ -112,6 +114,7 @@ module tb_add_sub_unit();
         carry_in = 0;
         control = {default: {default: '0}};
         
+        output_ready = 0;
         @(posedge clk);
         rst = 1;
         @(posedge clk);
@@ -119,7 +122,10 @@ module tb_add_sub_unit();
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        output_ready = 1;
+        @(posedge clk);
         for(int i = 0; i < 4; i++) begin
+            #2
             input_valid = 1;
             rs_id_in = i;
             result_reg_addr_in = 31-i;
@@ -130,6 +136,7 @@ module tb_add_sub_unit();
             control = control_stream[i];
             @(posedge clk);
         end
+        #2
         input_valid = 0;
         rs_id_in = 0;
         result_reg_addr_in = 0;
@@ -143,6 +150,117 @@ module tb_add_sub_unit();
         @(posedge clk);
         @(posedge clk);
         @(posedge clk);
+        output_ready = 0;
+        for(int i = 0; i < 4; i++) begin
+            #2
+            input_valid = 1;
+            rs_id_in = i;
+            result_reg_addr_in = 31-i;
+            
+            op1 = op1_stream[i];
+            op2 = op2_stream[i];
+            carry_in = carry_stream[i];
+            control = control_stream[i];
+            @(posedge clk);
+        end
+        #2
+        input_valid = 0;
+        rs_id_in = 0;
+        result_reg_addr_in = 0;
+        
+        op1 = 0;
+        op2 = 0;
+        carry_in = 0;
+        control = {default: {default: '0}};
+        
         @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        output_ready = 1;
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 12;
+        result_reg_addr_in = 17;
+        
+        op1 = op1_stream[0];
+        op2 = op2_stream[0];
+        carry_in = carry_stream[0];
+        control = control_stream[0];
+        @(posedge clk);
+        #2
+        input_valid = 0;
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 13;
+        result_reg_addr_in = 14;
+        
+        op1 = op1_stream[1];
+        op2 = op2_stream[1];
+        carry_in = carry_stream[1];
+        control = control_stream[1];
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 11;
+        result_reg_addr_in = 14;
+        
+        op1 = op1_stream[2];
+        op2 = op2_stream[2];
+        carry_in = carry_stream[2];
+        control = control_stream[2];
+        @(posedge clk);
+        #2
+        input_valid = 0;
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        output_ready = 0;
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 12;
+        result_reg_addr_in = 17;
+        
+        op1 = op1_stream[0];
+        op2 = op2_stream[0];
+        carry_in = carry_stream[0];
+        control = control_stream[0];
+        @(posedge clk);
+        #2
+        input_valid = 0;
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 13;
+        result_reg_addr_in = 14;
+        
+        op1 = op1_stream[1];
+        op2 = op2_stream[1];
+        carry_in = carry_stream[1];
+        control = control_stream[1];
+        @(posedge clk);
+        #2
+        input_valid = 1;
+        rs_id_in = 11;
+        result_reg_addr_in = 14;
+        
+        op1 = op1_stream[2];
+        op2 = op2_stream[2];
+        carry_in = carry_stream[2];
+        control = control_stream[2];
+        @(posedge clk);
+        #2
+        input_valid = 0;
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        @(posedge clk);
+        output_ready = 1;
     end
 endmodule
