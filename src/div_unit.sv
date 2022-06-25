@@ -88,6 +88,8 @@ module div_unit #(
         end
     end
 
+    logic pipe_enable[0:2];
+
     always_ff @(posedge clk)
     begin
         if(rst) begin
@@ -103,24 +105,28 @@ module div_unit #(
             op2_sign_ff <= 0;
         end
         else begin
-            valid_stages_ff[0]              <= input_valid;
-            rs_id_stages_ff[0]              <= rs_id_in;
-            result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
-            control_stages_ff[0]            <= control;
+            if(pipe_enable[0]) begin
+                valid_stages_ff[0]              <= input_valid;
+                rs_id_stages_ff[0]              <= rs_id_in;
+                result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
+                control_stages_ff[0]            <= control;
 
-            op1_ff[0] <= op1;
-            op2_ff[0] <= op2;
+                op1_ff[0] <= op1;
+                op2_ff[0] <= op2;
+            end
 
-            valid_stages_ff[1]              <= valid_stages_ff[0];
-            rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
-            result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
-            control_stages_ff[1]            <= control_stages_ff[0];
+            if(pipe_enable[1]) begin
+                valid_stages_ff[1]              <= valid_stages_ff[0];
+                rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
+                result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
+                control_stages_ff[1]            <= control_stages_ff[0];
 
-            op1_ff[1] <= op1_comb;
-            op2_ff[1] <= op2_comb;
+                op1_ff[1] <= op1_comb;
+                op2_ff[1] <= op2_comb;
 
-            op1_sign_ff <= op1_sign_comb;
-            op2_sign_ff <= op2_sign_comb;
+                op1_sign_ff <= op1_sign_comb;
+                op2_sign_ff <= op2_sign_comb;
+            end
         end
     end
 
@@ -161,52 +167,121 @@ module div_unit #(
 
     always_ff @(posedge clk) 
     begin
-        if (busy_ff) begin
-            if (i_ff == 31) begin  // we're done
-                busy_ff <= 0;
-                result_valid_ff <= 1;
-                final_quotient_ff <= quotient_comb;
-                final_remainder_ff <= acccumulator_comb[0:31];  // undo final shift
-            end 
-            else begin  // next iteration
-                i_ff <= i_ff + 1;
-                acccumulator_ff <= acccumulator_comb;
-                quotient_ff <= quotient_comb;
-            end
-        end
-        else if (valid_stages_ff[1]) begin
-            rs_id_ff <= rs_id_stages_ff[1];
-            result_reg_addr_ff <= result_reg_addr_stages_ff[1];
-            div_control_ff <= control_stages_ff[1];
-            result_sign_ff <= op1_sign_ff ^ op2_sign_ff;
-
+        if(rst) begin
+            rs_id_ff <= 0;
+            result_reg_addr_ff <= 0;
+            div_control_ff <= 0;
+            result_sign_ff <= 0;
             result_valid_ff <= 0;
+            OV_ff <= 0;
+
+            busy_ff <= 0;
+            result_valid_ff <= 0;
+            final_quotient_ff <= 0;
+            final_remainder_ff <= 0;
             i_ff <= 0;
-
-            // divide by zero and the most negative number divided by -1 (the result wouldn't fit in 32 bits) is undefined
-            if (op2_ff[1] == 0 || (op2_sign_ff == 1 && op2_ff[1] == 1 && op1_sign_ff == 1 && op1_ff[1] == 32'h80000000) begin
-                busy_ff <= 0;
-                OV_ff <= 1;
-            end
-            else begin  // initialize values
-                busy_ff <= 1;
-                OV_ff <= 0;
-                divisor_ff <= op2_ff[1];
-                {acccumulator_ff, quotient_ff} <= {32'b0, op1_ff[1], 1'b0};
-            end
+            acccumulator_ff <= 0;
+            quotient_ff <= 0;
         end
-        else begin // reset valid signal
-            result_valid_ff <= 0;
+        else begin
+            if(busy_ff) begin
+                if (i_ff == 31) begin  // we're done
+                    if(pipe_enable[2] | ~result_valid_ff) begin 
+                        // only propagate result, if result register is empty or the output registers are activated
+                        busy_ff <= 0;
+                        result_valid_ff <= 1;
+                        final_quotient_ff <= quotient_comb;
+                        final_remainder_ff <= acccumulator_comb[0:31];  // undo final shift
+                    end
+                end 
+                else begin  // next iteration
+                    i_ff <= i_ff + 1;
+                    acccumulator_ff <= acccumulator_comb;
+                    quotient_ff <= quotient_comb;
+                end
+            end
+            else if(valid_stages_ff[1]) begin
+                rs_id_ff <= rs_id_stages_ff[1];
+                result_reg_addr_ff <= result_reg_addr_stages_ff[1];
+                div_control_ff <= control_stages_ff[1];
+                result_sign_ff <= op1_sign_ff ^ op2_sign_ff;
+
+                i_ff <= 0;
+
+                // divide by zero and the most negative number divided by -1 (the result wouldn't fit in 32 bits) is undefined
+                if(op2_ff[1] == 0 || (op2_sign_ff == 1 && op2_ff[1] == 1 && op1_sign_ff == 1 && op1_ff[1] == 32'h80000000)) begin
+                    busy_ff <= 0;
+                    OV_ff <= 1;
+                    result_valid_ff <= 1;
+                    final_quotient_ff <= 0;
+                    final_remainder_ff <= 0;
+                end
+                else begin  // initialize values
+                    busy_ff <= 1;
+                    OV_ff <= 0;
+                    divisor_ff <= op2_ff[1];
+                    result_valid_ff <= 0;
+                    {acccumulator_ff, quotient_ff} <= {32'b0, op1_ff[1], 1'b0};
+                end
+            end
+            else begin // reset valid signal
+                result_valid_ff <= 0;
+            end
         end
     end
 
     //------ Divider ends here ------
 
-    
 
     always_comb
     begin
-        
+        // After divider
+        pipe_enable[2] = (~result_valid_ff & output_valid) | (output_ready & result_valid_ff);
+        // Before divider
+        pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (!busy_ff & valid_stages_ff[1]);
+        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
+
+        input_ready = ~valid_stages_ff[0] | ~valid_stages_ff[1] | ~busy_ff;
+    end
+
+    cond_exception_t cr0_xer_comb;
+    logic[0:31] result_comb;
+
+    always_comb
+    begin
+        if(result_sign_ff == 1) begin
+            // Convert to two's complement
+            result_comb = ~final_quotient_ff + 1;
+        end
+        else begin
+            result_comb = final_quotient_ff;
+        end
+
+        cr0_xer_comb.OV = OV_ff;
+        cr0_xer_comb.OV_valid = div_control_ff.alter_OV;
+        cr0_xer_comb.CA = 0;
+        cr0_xer_comb.CA_valid = 0;
+        cr0_xer_comb.CR0_valid = div_control_ff.alter_CR0;
+    end
+
+    always_ff @(posedge clk)
+    begin
+        if(rst) begin
+            cr0_xer <= {default: '0};
+            result <= 0;
+            rs_id_out <= 0;
+            result_reg_addr_out <= 0;
+            output_valid <= 0;
+        end
+        else begin
+            if(pipe_enable[2]) begin
+                cr0_xer <= cr0_xer_comb;
+                result <= result_comb;
+                rs_id_out <= rs_id_ff;
+                result_reg_addr_out <= result_reg_addr_ff;
+                output_valid <= result_valid_ff;
+            end
+        end
     end
 
 endmodule
