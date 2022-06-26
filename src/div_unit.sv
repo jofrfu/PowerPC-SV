@@ -186,7 +186,7 @@ module div_unit #(
         else begin
             if(busy_ff) begin
                 if (i_ff == 31) begin  // we're done
-                    if(pipe_enable[2] | ~result_valid_ff) begin 
+                    if(pipe_enable[2] | ~output_valid) begin 
                         // only propagate result, if result register is empty or the output registers are activated
                         busy_ff <= 0;
                         result_valid_ff <= 1;

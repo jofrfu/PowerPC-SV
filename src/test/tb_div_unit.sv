@@ -162,6 +162,23 @@ module tb_div_unit();
         @(posedge clk);
         #2;
         input_valid = 0;
+        @(posedge clk);
+        #2;
+        input_valid = 1;
+        rs_id_in = 30;
+        result_reg_addr_in = 0;
+        
+        op1 = 60;
+        op2 = 6;
+        control = {div_signed: 1, alter_CR0: 0, alter_OV: 0};
+        
+        while(~input_ready) begin
+            @(posedge clk);
+            #2;
+        end
+        @(posedge clk);
+        #2;
+        input_valid = 0;
 
         for(int i = 0; i < 32; i++) begin
             @(posedge clk);
