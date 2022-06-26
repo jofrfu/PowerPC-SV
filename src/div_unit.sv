@@ -236,7 +236,7 @@ module div_unit #(
     always_comb
     begin
         // After divider
-        pipe_enable[2] = (~result_valid_ff & output_valid) | (output_ready & result_valid_ff);
+        pipe_enable[2] = (~output_valid & result_valid_ff) | (output_ready & output_valid);
         // Before divider
         pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (!busy_ff & valid_stages_ff[1]);
         pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);

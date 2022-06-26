@@ -162,6 +162,17 @@ module tb_div_unit();
         @(posedge clk);
         #2;
         input_valid = 0;
+
+        for(int i = 0; i < 32; i++) begin
+            @(posedge clk);
+            #2;
+        end
+        output_ready = 0;
+        for(int i = 0; i < 16; i++) begin
+            @(posedge clk);
+            #2;
+        end
+        output_ready = 1;
     end
 
 endmodule
