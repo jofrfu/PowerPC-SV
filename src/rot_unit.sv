@@ -87,6 +87,7 @@ module rot_unit #(
             mask_begin_comb = control_stages_ff[0].MB;
             mask_end_comb = control_stages_ff[0].ME;
             compute_mask_comb = 1;
+            op2_comb = op2_ff[0];
         end
     end
 
@@ -97,11 +98,11 @@ module rot_unit #(
     begin
         if(compute_mask_ff) begin
             for(int i = 0; i < 32; i++) begin
-                if(mask_begin_comb > mask_end_comb) begin
+                if(mask_begin_ff > mask_end_ff) begin
                     mask_comb[i] = (i >= mask_begin_ff) | (i <= mask_end_ff);
                 end
                 else begin
-                    mask_comb[i] = (i >= mask_begin_comb) & (i <= mask_end_comb);
+                    mask_comb[i] = (i >= mask_begin_ff) & (i <= mask_end_ff);
                 end
             end
         end
@@ -109,9 +110,11 @@ module rot_unit #(
             mask_comb = 32'b0;
         end
 
+        shifted_comb = 0;
         // Rotate left
         for(int i = 0; i < 32; i++) begin
-            shifted_comb[i - op2_ff[1][1:5]] = op1_ff[1][i];
+            logic[0:4] target_index = i - op2_ff[1][1:5];
+            shifted_comb[target_index] = op1_ff[1][i];
         end
     end
 
@@ -142,6 +145,19 @@ module rot_unit #(
         cr0_xer_comb.CR0_valid = control_stages_ff[2].alter_CR0;
     end
 
+    logic pipe_enable[0:3];
+    
+    always_comb
+    begin
+        pipe_enable[3] = (~valid_stages_ff[3] & valid_stages_ff[2]) | (output_ready & valid_stages_ff[3]);
+        pipe_enable[2] = (~valid_stages_ff[2] & valid_stages_ff[1]) | (pipe_enable[3] & valid_stages_ff[2]);
+        pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (pipe_enable[2] & valid_stages_ff[1]);
+        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
+             
+        // If data can move in the pipeline, we can still take input data
+        input_ready = Reduction#(4)::or_reduce(pipe_enable);
+    end
+
     always_ff @(posedge clk)
     begin
         if(rst) begin
@@ -166,46 +182,53 @@ module rot_unit #(
             cr0_xer <= {default: '0};
         end
         else begin
-            valid_stages_ff[0]              <= input_valid;
-            rs_id_stages_ff[0]              <= rs_id_in;
-            result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
-            control_stages_ff[0]            <= control;
-            
-            op1_ff[0]   <= op1;
-            op2_ff[0]   <= op2;
-            target_ff[0]<= target;
+            if(pipe_enable[0]) begin
+                valid_stages_ff[0]              <= input_valid;
+                rs_id_stages_ff[0]              <= rs_id_in;
+                result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
+                control_stages_ff[0]            <= control;
+                
+                op1_ff[0]   <= op1;
+                op2_ff[0]   <= op2;
+                target_ff[0]<= target;
+            end
 
-            mask_begin_ff <= mask_begin_comb;
-            mask_end_ff <= mask_end_comb;
+            if(pipe_enable[1]) begin
+                mask_begin_ff <= mask_begin_comb;
+                mask_end_ff <= mask_end_comb;
+                compute_mask_ff <= compute_mask_comb;
 
-            valid_stages_ff[1]              <= valid_stages_ff[0];
-            rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
-            result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
-            control_stages_ff[1]            <= control_stages_ff[0];
-            
-            op1_ff[1]   <= op1_ff[0];
-            op2_ff[1]   <= op2_ff[0];
-            target_ff[1]<= target_ff[0];
+                valid_stages_ff[1]              <= valid_stages_ff[0];
+                rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
+                result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
+                control_stages_ff[1]            <= control_stages_ff[0];
+                
+                op1_ff[1]   <= op1_ff[0];
+                op2_ff[1]   <= op2_ff[0];
+                target_ff[1]<= target_ff[0];
+            end
 
-            compute_mask_ff <= compute_mask_comb;
+            if(pipe_enable[2]) begin
+                valid_stages_ff[2]              <= valid_stages_ff[1];
+                rs_id_stages_ff[2]              <= rs_id_stages_ff[1];
+                result_reg_addr_stages_ff[2]    <= result_reg_addr_stages_ff[1];
+                control_stages_ff[2]            <= control_stages_ff[1];
+                
+                op1_ff[2]   <= op1_ff[1];
+                target_ff[2]<= target_ff[1];
 
-            valid_stages_ff[2]              <= valid_stages_ff[1];
-            rs_id_stages_ff[2]              <= rs_id_stages_ff[1];
-            result_reg_addr_stages_ff[2]    <= result_reg_addr_stages_ff[1];
-            control_stages_ff[2]            <= control_stages_ff[1];
-            
-            op1_ff[2]   <= op1_ff[1];
-            target_ff[2]<= target_ff[1];
+                mask_ff <= mask_comb;
+                shifted_ff <= shifted_comb;
+            end
 
-            mask_ff <= mask_comb;
-            shifted_ff <= shifted_comb;
+            if(pipe_enable[3]) begin
+                valid_stages_ff[3]              <= valid_stages_ff[2];
+                rs_id_stages_ff[3]              <= rs_id_stages_ff[2];
+                result_reg_addr_stages_ff[3]    <= result_reg_addr_stages_ff[2];
 
-            valid_stages_ff[3]              <= valid_stages_ff[2];
-            rs_id_stages_ff[3]              <= rs_id_stages_ff[2];
-            result_reg_addr_stages_ff[3]    <= result_reg_addr_stages_ff[2];
-
-            result <= result_comb;
-            cr0_xer <= cr0_xer_comb;
+                result <= result_comb;
+                cr0_xer <= cr0_xer_comb;
+            end
         end
     end
 
