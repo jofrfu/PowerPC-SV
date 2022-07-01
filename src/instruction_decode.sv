@@ -586,9 +586,8 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.control.op1_reg_address = X_form.RA;
                             decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
-                            decode_comb.fixed_point.control.result_reg_address = X_form.RT;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.BF;
                             decode_comb.fixed_point.cmp.cmp_signed = 1;
-                            decode_comb.fixed_point.cmp.BF = X_form.BF;
                         end
                     32: // cmpl
                         begin
@@ -597,8 +596,7 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.control.op1_reg_address = X_form.RA;
                             decode_comb.fixed_point.control.op2_reg_address = X_form.RB;
-                            decode_comb.fixed_point.control.result_reg_address = X_form.RT;
-                            decode_comb.fixed_point.cmp.BF = X_form.BF;
+                            decode_comb.fixed_point.control.result_reg_address = X_form.BF;
                         end
                     // X Form Trap instructions
                     4:  // tw
@@ -968,8 +966,7 @@ module instruction_decode(
                     decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
                     decode_comb.fixed_point.control.op2_use_imm = 1;
                     decode_comb.fixed_point.control.op2_immediate = D_form.UI;
-                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
-                    decode_comb.fixed_point.cmp.BF = D_form.BF;
+                    decode_comb.fixed_point.control.result_reg_address = D_form.BF;
                 end
             11: // cmpi
                 begin
@@ -979,8 +976,7 @@ module instruction_decode(
                     decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
                     decode_comb.fixed_point.control.op2_use_imm = 1;
                     decode_comb.fixed_point.control.op2_immediate = {{16{D_form.SI[0]}}, D_form.SI};
-                    decode_comb.fixed_point.control.result_reg_address = D_form.RT;
-                    decode_comb.fixed_point.cmp.BF = D_form.BF;
+                    decode_comb.fixed_point.control.result_reg_address = D_form.BF;
                 end
             // D Form Trap instructions
             3: // twi

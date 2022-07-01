@@ -462,7 +462,7 @@ package ppc_types;
     
     typedef struct packed {
         logic cmp_signed;
-        logic[0:2] BF;
+        //logic[0:2] BF;
     } cmp_decode_t;
     
     typedef struct packed {
