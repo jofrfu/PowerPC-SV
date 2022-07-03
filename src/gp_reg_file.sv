@@ -15,14 +15,14 @@
 ==============================================================================*/
 
 module gp_reg_file #(
-    parameter int READ_PORTS = 3,
+    parameter int READ_PORTS = 1,
     parameter int RS_ID_WIDTH = 5
 )(
     input logic clk,
     input logic rst,
     
     // Read ports are used to read all information about registers
-    // inlcuding which reservation station holds the data, if the register content is invalid
+    // including which reservation station holds the data, if the register content is invalid
     input logic[0:4]                read_addr[0:READ_PORTS-1],
     output logic                    read_value_valid[0:READ_PORTS-1],
     output logic[0:31]              read_value[0:READ_PORTS-1],
@@ -52,9 +52,9 @@ module gp_reg_file #(
     always_comb
     begin
         for(int i = 0; i < READ_PORTS; i++) begin
-            read_value_valid[i] <= registers_ff[read_addr[i]].value_valid;
-            read_value[i]       <= registers_ff[read_addr[i]].value;
-            read_rs_id[i]       <= registers_ff[read_addr[i]].rs_id;
+            read_value_valid[i] = registers_ff[read_addr[i]].value_valid;
+            read_value[i]       = registers_ff[read_addr[i]].value;
+            read_rs_id[i]       = registers_ff[read_addr[i]].rs_id;
         end
     end
     
