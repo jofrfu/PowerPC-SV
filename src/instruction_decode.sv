@@ -789,7 +789,8 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.system.operation = SYS_MOVE_FROM_SPR;
                             decode_comb.fixed_point.control.op1_reg_address = XFX_form.RT;
-                            decode_comb.fixed_point.system.SPR = XFX_form.spr;
+                            // Reverse the SPR field according to spec
+                            decode_comb.fixed_point.system.SPR = {XFX_form.spr[5:9], XFX_form.spr[0:4]};
                         end
                     467: // mtspr
                         begin
@@ -797,7 +798,8 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.system.operation = SYS_MOVE_TO_SPR;
                             decode_comb.fixed_point.control.op1_reg_address = XFX_form.RS;
-                            decode_comb.fixed_point.system.SPR = XFX_form.spr;
+                            // Reverse the SPR field according to spec
+                            decode_comb.fixed_point.system.SPR = {XFX_form.spr[5:9], XFX_form.spr[0:4]};
                         end
                     // X Form floating point Load/Store instructions
                     // TODO: Implement
