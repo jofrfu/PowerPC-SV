@@ -35,7 +35,7 @@ module cond_reg_file #(
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register
     input logic                     update_enable[0:7],
-    input logic[0:RS_ID_WIDTH-1]    update_rs_id[0:7]
+    input logic[0:RS_ID_WIDTH-1]    update_rs_id
 );
 
     // The condition register is split into 8 registers of 4 bit 
@@ -69,7 +69,7 @@ module cond_reg_file #(
                 if(update_enable[i]) begin
                     // Invalidate the register content and update the reservation station ID
                     value_valid_ff[i]   <= 0;
-                    rs_id_ff[i]         <= update_rs_id[i];
+                    rs_id_ff[i]         <= update_rs_id;
                 end
             end
         end
