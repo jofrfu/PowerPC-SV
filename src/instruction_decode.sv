@@ -19,8 +19,12 @@ module instruction_decode(
     input logic clk,
     input logic rst,
     
+    input logic instruction_valid,
+    output logic instruction_ready,
     input logic[0:31] instruction,
     
+    output logic decode_valid,
+    input logic decode_ready,
     output decode_result_t decode
 );
 
@@ -1056,13 +1060,21 @@ module instruction_decode(
         endcase
     end
     
+    logic enable;
+    assign enable = (~decode_valid & instruction_valid) | (decode_ready & decode_valid);
+    assign instruction_ready = enable;
+
     always_ff @(posedge clk)
     begin
         if(rst) begin
+            decode_valid <= 0;
             decode_ff <= {default: {default: '0}};
         end
         else begin
-            decode_ff <= decode_comb;
+            if(enable) begin
+                decode_valid <= instruction_valid;
+                decode_ff <= decode_comb;
+            end
         end
     end
     

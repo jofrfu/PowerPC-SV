@@ -16,23 +16,20 @@
 
 import ppc_types::*;
 
-module dispatcher #(
-    parameter int RS_ID_WIDTH = 5
-)(
-    input logic clk,
-    input logic rst,
-    
+module dispatcher(
+    // Input interface from instruction decode
     input logic input_valid,
     output logic input_ready,
     input decode_result_t decode,
-    
+
+    // Output interfaces to each unit
     output logic add_sub_valid,
     input logic add_sub_ready,
     output add_sub_decode_t add_sub_decode,
     
     output logic mul_valid,
     input logic mul_ready,
-    output mul_decode_t div_decode,
+    output mul_decode_t mul_decode,
 
     output logic div_valid,
     input logic div_ready,
@@ -59,4 +56,79 @@ module dispatcher #(
     output trap_decode_t trap_decode
 );
 
+
+    always_comb
+    begin
+        add_sub_decode = decode.fixed_point.add_sub;
+        mul_decode = decode.fixed_point.mul;
+        div_decode = decode.fixed_point.div;
+        cmp_decode = decode.fixed_point.cmp;
+        trap_decode = decode.fixed_point.trap;
+        log_decode = decode.fixed_point.log;
+        rot_decode = decode.fixed_point.rotate;
+        sys_decode = decode.fixed_point.system;
+
+        add_sub_valid = 0;
+        mul_valid = 0;
+        div_valid = 0;
+        cmp_valid = 0;
+        trap_valid = 0;
+        log_valid = 0;
+        rot_valid = 0;
+        sys_valid = 0;
+
+        case(decode.fixed_point.execute)
+            //EXEC_FIXED_NONE:
+            //EXEC_LOAD:
+            //EXEC_STORE:
+            //EXEC_LOAD_STRING:
+            //EXEC_STORE_STRING:
+            EXEC_ADD_SUB:
+                begin
+                    input_ready = add_sub_ready;
+                    add_sub_valid = input_valid;
+                end
+            EXEC_MUL:
+                begin
+                    input_ready = mul_ready;
+                    mul_valid = input_valid;
+                end
+            EXEC_DIV:
+                begin
+                    input_ready = div_ready;
+                    div_valid = input_valid;
+                end
+            EXEC_COMPARE:
+                begin
+                    input_ready = cmp_ready;
+                    cmp_valid = input_valid;
+                end
+            EXEC_TRAP:
+                begin
+                    input_ready = trap_ready;
+                    trap_valid = input_valid;
+                end
+            EXEC_LOGICAL:
+                begin
+                    input_ready = log_ready;
+                    log_valid = input_valid;
+                end
+            EXEC_ROTATE:
+                begin
+                    input_ready = rot_ready;
+                    rot_valid = input_valid;
+                end
+            EXEC_SYSTEM:
+                begin
+                    input_ready = sys_ready;
+                    sys_valid = input_valid;
+                end
+            default:
+                // Invalid instruction!
+                begin
+                    input_ready = 1;
+                    // TODo: Trap on invalid instructions
+                end
+        endcase
+    end
 endmodule
