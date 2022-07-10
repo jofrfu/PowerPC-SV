@@ -28,7 +28,6 @@ module sys_unit #(
     input logic[0:4] result_reg_addr_in,
     
     input logic[0:31] op1,
-    input logic[0:31] op2,  // This is usually set to the CR register 
     input system_decode_t control,
     
     // GPR output bus
@@ -69,7 +68,6 @@ module sys_unit #(
     end 
 
     logic[0:31] op1_ff;
-    logic[0:31] op2_ff;
 
     logic gpr_output_valid_comb;
     logic spr_output_valid_comb;
@@ -131,8 +129,6 @@ module sys_unit #(
             control_stages_ff[0]            <= control;
             
             op1_ff      <= op1;
-            op2_ff      <= op2;
-
 
             gpr_output_valid                <= gpr_output_valid_comb;
             spr_output_valid                <= spr_output_valid_comb;
