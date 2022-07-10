@@ -39,10 +39,10 @@ module reservation_station #(
     //---------------------------------------------------------------
     
     //------ Simple valid interface for updated operands ------
-    input logic                     operand_valid,
+    input logic                     operand_valid[0:OPERANDS-1],
     
-    input logic[0:RS_ID_WIDTH-1]    update_op_rs_id_in,
-    input logic[0:31]               update_op_value_in,
+    input logic[0:RS_ID_WIDTH-1]    update_op_rs_id_in[0:OPERANDS-1],
+    input logic[0:31]               update_op_value_in[0:OPERANDS-1],
     //---------------------------------------------------------
     
     //------ Simple ready-valid interface for output ------
@@ -130,13 +130,13 @@ module reservation_station #(
             end
             
             // Update the values of registers in the reservation stations
-            if(operand_valid) begin
-                for(int i = 0; i < RS_DEPTH; i++) begin
-                    for(int j = 0; j < OPERANDS; j++) begin
+            for(int i = 0; i < RS_DEPTH; i++) begin
+                for(int j = 0; j < OPERANDS; j++) begin
+                    if(operand_valid[j]) begin
                         if(reservation_stations_ff[i].valid && ~reservation_stations_ff[i].op_value_valid[j]) begin
-                            if(reservation_stations_ff[i].op_rs_id[j] == update_op_rs_id_in) begin
+                            if(reservation_stations_ff[i].op_rs_id[j] == update_op_rs_id_in[j]) begin
                                 reservation_stations_ff[i].op_value_valid[j]    <= 1;
-                                reservation_stations_ff[i].op_value[j]          <= update_op_value_in;
+                                reservation_stations_ff[i].op_value[j]          <= update_op_value_in[j];
                             end
                         end
                     end

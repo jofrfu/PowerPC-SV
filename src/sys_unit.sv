@@ -48,6 +48,7 @@ module sys_unit #(
     // CR output bus
     output logic cr_output_valid,
     input logic cr_output_ready,
+    output logic cr_enable[0:7],
     output logic[0:RS_ID_WIDTH-1] cr_rs_id_out,
     output logic[0:31] cr_result
 );
@@ -63,20 +64,12 @@ module sys_unit #(
 
     assign gpr_result_reg_addr_out = result_reg_addr_stages_ff[1];
     assign spr_result_reg_addr_out = control_stages_ff[1].SPR;
+    for(genvar i = 0; i < 8; i++) begin // Packed to unpacked conversion
+        assign cr_enable[i]        = control_stages_ff[1].FXM[i];
+    end 
 
     logic[0:31] op1_ff;
     logic[0:31] op2_ff;
-
-    logic[0:31] mask_comb;
-
-    always_comb
-    begin
-        for(int n = 0, b = 0; n < 8; n++) begin
-            for(int i = 0; i < 4; i++) begin
-                mask_comb[b++] = control_stages_ff[0].FXM[n];
-            end
-        end
-    end
 
     logic gpr_output_valid_comb;
     logic spr_output_valid_comb;
@@ -94,7 +87,7 @@ module sys_unit #(
 
         spr_result_comb = op1_ff;
         gpr_result_comb = op1_ff;
-        cr_result_comb = (op1_ff & mask_comb) | (op2_ff & ~mask_comb);
+        cr_result_comb = op1_ff;
 
 
         case(control_stages_ff[0].operation)
