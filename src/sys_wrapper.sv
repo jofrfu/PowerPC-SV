@@ -16,9 +16,9 @@
 
 import ppc_types::*;
 
-module mul_wrapper #(
+module sys_wrapper #(
     parameter int RS_OFFSET = 0,
-    parameter int RS_DEPTH = 8,
+    parameter int RS_DEPTH = 2,
     parameter int RS_ID_WIDTH = 5
 )(
     input logic clk,
@@ -38,7 +38,7 @@ module mul_wrapper #(
     input logic[0:31] cr_op,
     input logic cr_op_valid,
     input logic[0:RS_ID_WIDTH-1] cr_op_rs_id,
-    input mul_decode_t control,
+    input system_decode_t control,
 
     output logic[0:RS_ID_WIDTH-1] id_taken,
     //---------------------------------------------------------------
@@ -85,33 +85,64 @@ module mul_wrapper #(
     //------ Simple ready-valid interface for GPR results ------
     output logic cr_output_valid,
     input logic cr_output_ready,
+    output logic cr_result_enable[0:7],
     output logic[0:RS_ID_WIDTH-1] cr_rs_id_out,
-    output logic[0:7] cr_result_enable,
     
-    output logic[0:31] cr_result,
+    output logic[0:31] cr_result
     //-----------------------------------------------------
-
-    output cond_exception_t cr0_xer
 );
-    //  TODO: Implement this wrapper (most of the stuff is still copied from mul_wrapper)
 
     typedef struct {
-        mul_decode_t mul;
+        system_decode_t sys;
         logic[0:4] result_reg_addr;
     } control_t;
 
     control_t rs_control_in;
 
-    assign rs_control_in.mul = control;
+    assign rs_control_in.sys = control;
     assign rs_control_in.result_reg_addr = result_reg_addr_in;
 
 
-    logic rs_output_valid;
-    logic rs_output_ready;
+    logic rs_gpr_valid, rs_spr_valid, rs_cr_valid;
+    logic rs_gpr_ready, rs_spr_ready, rs_cr_ready;
 
-    logic[0:31] rs_op1, rs_op2;
-    control_t rs_control_out;
-    logic[0:RS_ID_WIDTH-1] rs_id_to_unit;
+    logic[0:31] rs_gpr_op, rs_spr_op, rs_cr_op;
+    control_t rs_gpr_control_out, rs_spr_control_out, rs_cr_control_out;
+    logic[0:RS_ID_WIDTH-1] rs_gpr_id_to_unit, rs_spr_id_to_unit, rs_cr_id_to_unit;
+
+    logic gpr_input_ready, spr_input_ready, cr_input_ready;
+    logic[0:RS_ID_WIDTH-1] gpr_id_taken, spr_id_taken, cr_id_taken;
+
+    always_comb
+    begin
+        case(control.operation)
+            SYS_MOVE_TO_SPR:
+                begin
+                    input_ready = gpr_input_ready;
+                    id_taken = gpr_id_taken;
+                end
+            SYS_MOVE_FROM_SPR:
+                begin
+                    input_ready = spr_input_ready;
+                    id_taken = spr_id_taken;
+                end
+            SYS_MOVE_TO_CR:
+                begin
+                    input_ready = gpr_input_ready;
+                    id_taken = gpr_id_taken;
+                end
+            SYS_MOVE_FROM_CR:
+                begin
+                    input_ready = cr_input_ready;
+                    id_taken = cr_id_taken;
+                end
+            default:
+                begin
+                    input_ready = 0;
+                    id_taken = 0;
+                end
+        endcase
+    end
 
     reservation_station #(
         .OPERANDS(1),
@@ -119,35 +150,215 @@ module mul_wrapper #(
         .RS_DEPTH(RS_DEPTH),
         .RS_ID_WIDTH(RS_ID_WIDTH),
         .CONTROL_TYPE(control_t)
-    ) RS (
+    ) GPR_RS (
         .clk(clk),
         .rst(rst),
 
-        .take_valid(input_valid),
-        .take_ready(input_ready),
+        .take_valid(input_valid & (control.operation == SYS_MOVE_TO_SPR | control.operation == SYS_MOVE_TO_CR)),
+        .take_ready(gpr_input_ready),
 
-        .op_value_valid_in(gpr_op_valid),
-        .op_rs_id_in(gpr_op_rs_id),
-        .op_value_in(gpr_op),
+        .op_value_valid_in({gpr_op_valid}),
+        .op_rs_id_in({gpr_op_rs_id}),
+        .op_value_in({gpr_op}),
         .control_in(rs_control_in),
 
-        .id_taken(id_taken),
+        .id_taken(gpr_id_taken),
 
-        .operand_valid({update_op_valid, update_op_valid}),
-        .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in}),
-        .update_op_value_in({update_op_value_in, update_op_value_in}),
+        .operand_valid({update_gpr_op_valid}),
+        .update_op_rs_id_in({update_gpr_op_rs_id_in}),
+        .update_op_value_in({update_gpr_op_value_in}),
     
-        .output_valid(rs_output_valid),
-        .output_ready(rs_output_ready),
+        .output_valid(rs_gpr_valid),
+        .output_ready(rs_gpr_ready),
 
-        .op_value_out('{rs_op1, rs_op2}),
-        .control_out(rs_control_out),
-        .op_rs_id_out(rs_id_to_unit)
+        .op_value_out('{rs_gpr_op}),
+        .control_out(rs_gpr_control_out),
+        .op_rs_id_out(rs_gpr_id_to_unit)
     );
 
-    mul_unit #(
+    reservation_station #(
+        .OPERANDS(1),
+        .RS_OFFSET(RS_OFFSET),
+        .RS_DEPTH(RS_DEPTH),
+        .RS_ID_WIDTH(RS_ID_WIDTH),
+        .CONTROL_TYPE(control_t)
+    ) SPR_RS (
+        .clk(clk),
+        .rst(rst),
+
+        .take_valid(input_valid & (control.operation == SYS_MOVE_FROM_SPR)),
+        .take_ready(spr_input_ready),
+
+        .op_value_valid_in({spr_op_valid}),
+        .op_rs_id_in({spr_op_rs_id}),
+        .op_value_in({spr_op}),
+        .control_in(rs_control_in),
+
+        .id_taken(spr_id_taken),
+
+        .operand_valid({update_spr_op_valid}),
+        .update_op_rs_id_in({update_spr_op_rs_id_in}),
+        .update_op_value_in({update_spr_op_value_in}),
+    
+        .output_valid(rs_spr_valid),
+        .output_ready(rs_spr_ready),
+
+        .op_value_out('{rs_spr_op}),
+        .control_out(rs_spr_control_out),
+        .op_rs_id_out(rs_spr_id_to_unit)
+    );
+
+    reservation_station #(
+        .OPERANDS(1),
+        .RS_OFFSET(RS_OFFSET),
+        .RS_DEPTH(RS_DEPTH),
+        .RS_ID_WIDTH(RS_ID_WIDTH),
+        .CONTROL_TYPE(control_t)
+    ) CR_RS (
+        .clk(clk),
+        .rst(rst),
+
+        .take_valid(input_valid & control.operation == SYS_MOVE_FROM_CR),
+        .take_ready(cr_input_ready),
+
+        .op_value_valid_in({cr_op_valid}),
+        .op_rs_id_in({cr_op_rs_id}),
+        .op_value_in({cr_op}),
+        .control_in(rs_control_in),
+
+        .id_taken(cr_id_taken),
+
+        .operand_valid({update_cr_op_valid}),
+        .update_op_rs_id_in({update_cr_op_rs_id_in}),
+        .update_op_value_in({update_cr_op_value_in}),
+    
+        .output_valid(rs_cr_valid),
+        .output_ready(rs_cr_ready),
+
+        .op_value_out('{rs_cr_op}),
+        .control_out(rs_cr_control_out),
+        .op_rs_id_out(rs_cr_id_to_unit)
+    );
+
+    logic rs_output_valid;
+    logic rs_output_ready;
+    logic[0:RS_ID_WIDTH-1] rs_id_to_unit;
+    logic[0:31] rs_op;
+    control_t rs_control_out;
+
+    always_comb
+    begin
+        logic[0:2] valids = {rs_gpr_valid, rs_spr_valid, rs_cr_valid};
+
+        rs_gpr_ready = 0;
+        rs_spr_ready = 0;
+        rs_cr_ready  = 0;
+
+        case(valids)
+            3'b000:
+                begin
+                    rs_output_valid = 0;
+                    rs_id_to_unit = 0;
+                    rs_op = 0;
+                    rs_control_out = {default: {default: '0}};
+                end
+            3'b100:
+                begin
+                    rs_output_valid = rs_gpr_valid;
+                    rs_gpr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_gpr_id_to_unit;
+                    rs_op           = rs_gpr_op;
+                    rs_control_out  = rs_gpr_control_out;
+                end
+            3'b010:
+                begin
+                    rs_output_valid = rs_spr_valid;
+                    rs_spr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_spr_id_to_unit;
+                    rs_op           = rs_spr_op;
+                    rs_control_out  = rs_spr_control_out;
+                end
+            3'b001:
+                begin
+                    rs_output_valid = rs_cr_valid;
+                    rs_cr_ready     = rs_output_ready;
+                    rs_id_to_unit   = rs_cr_id_to_unit;
+                    rs_op           = rs_cr_op;
+                    rs_control_out  = rs_cr_control_out;
+                end
+            3'b110:
+                if(rs_gpr_id_to_unit < rs_spr_id_to_unit) begin
+                    rs_output_valid = rs_gpr_valid;
+                    rs_gpr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_gpr_id_to_unit;
+                    rs_op           = rs_gpr_op;
+                    rs_control_out  = rs_gpr_control_out;
+                end
+                else begin
+                    rs_output_valid = rs_spr_valid;
+                    rs_spr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_spr_id_to_unit;
+                    rs_op           = rs_spr_op;
+                    rs_control_out  = rs_spr_control_out;
+                end
+            3'b101:
+                if(rs_gpr_id_to_unit < rs_cr_id_to_unit) begin
+                    rs_output_valid = rs_gpr_valid;
+                    rs_gpr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_gpr_id_to_unit;
+                    rs_op           = rs_gpr_op;
+                    rs_control_out  = rs_gpr_control_out;
+                end
+                else begin
+                    rs_output_valid = rs_cr_valid;
+                    rs_cr_ready     = rs_output_ready;
+                    rs_id_to_unit   = rs_cr_id_to_unit;
+                    rs_op           = rs_cr_op;
+                    rs_control_out  = rs_cr_control_out;
+                end
+            3'b011:
+                if(rs_spr_id_to_unit < rs_cr_id_to_unit) begin
+                    rs_output_valid = rs_spr_valid;
+                    rs_spr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_spr_id_to_unit;
+                    rs_op           = rs_spr_op;
+                    rs_control_out  = rs_spr_control_out;
+                end
+                else begin
+                    rs_output_valid = rs_cr_valid;
+                    rs_cr_ready     = rs_output_ready;
+                    rs_id_to_unit   = rs_cr_id_to_unit;
+                    rs_op           = rs_cr_op;
+                    rs_control_out  = rs_cr_control_out;
+                end
+            3'b111:
+                if(rs_gpr_id_to_unit < rs_spr_id_to_unit & rs_gpr_id_to_unit < rs_cr_id_to_unit) begin
+                    rs_output_valid = rs_gpr_valid;
+                    rs_gpr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_gpr_id_to_unit;
+                    rs_op           = rs_gpr_op;
+                    rs_control_out  = rs_gpr_control_out;
+                end
+                else if(rs_spr_id_to_unit < rs_gpr_id_to_unit & rs_spr_id_to_unit < rs_cr_id_to_unit) begin
+                    rs_output_valid = rs_spr_valid;
+                    rs_spr_ready    = rs_output_ready;
+                    rs_id_to_unit   = rs_spr_id_to_unit;
+                    rs_op           = rs_spr_op;
+                    rs_control_out  = rs_spr_control_out;
+                end
+                else begin
+                    rs_output_valid = rs_cr_valid;
+                    rs_cr_ready     = rs_output_ready;
+                    rs_id_to_unit   = rs_cr_id_to_unit;
+                    rs_op           = rs_cr_op;
+                    rs_control_out  = rs_cr_control_out;
+                end
+        endcase
+    end
+
+    sys_unit #(
         .RS_ID_WIDTH(RS_ID_WIDTH)
-    ) MUL (
+    ) SYS (
         .clk(clk),
         .rst(rst),
 
@@ -157,16 +368,25 @@ module mul_wrapper #(
         .rs_id_in(rs_id_to_unit),
         .result_reg_addr_in(rs_control_out.result_reg_addr),
 
-        .op1(rs_op1),
-        .op2(rs_op2),
-        .control(rs_control_out.mul),
+        .op1(rs_op),
+        .control(rs_control_out.sys),
 
-        .output_valid(output_valid),
-        .output_ready(output_ready),
+        .gpr_output_valid(gpr_output_valid),
+        .gpr_output_ready(gpr_output_ready),
+        .gpr_rs_id_out(gpr_rs_id_out),
+        .gpr_result_reg_addr_out(gpr_result_reg_addr_out),
+        .gpr_result(gpr_result),
 
-        .rs_id_out(rs_id_out),
-        .result_reg_addr_out(result_reg_addr_out),
-        .result(result),
-        .cr0_xer(cr0_xer)
+        .spr_output_valid(spr_output_valid),
+        .spr_output_ready(spr_output_ready),
+        .spr_rs_id_out(spr_rs_id_out),
+        .spr_result_reg_addr_out(spr_result_reg_addr_out),
+        .spr_result(spr_result),
+
+        .cr_output_valid(cr_output_valid),
+        .cr_output_ready(cr_output_ready),
+        .cr_enable(cr_result_enable),
+        .cr_rs_id_out(cr_rs_id_out),
+        .cr_result(cr_result)
     );
 endmodule
