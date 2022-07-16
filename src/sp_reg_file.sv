@@ -34,6 +34,7 @@ module sp_reg_file #(
     input logic[0:9]                write_addr,
     input logic                     write_enable,
     input logic[0:31]               write_value,
+    input_logic[0:RS_ID_WIDTH-1]    write_rs_id,
     
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register
@@ -94,18 +95,24 @@ module sp_reg_file #(
                 case(write_addr)
                     1:  // XER register
                         begin
-                            registers_ff[0].value          <= write_value;
-                            registers_ff[0].value_valid    <= 1;
+                            if(registers_ff[0].rs_id == write_rs_id) begin
+                                registers_ff[0].value          <= write_value;
+                                registers_ff[0].value_valid    <= 1;
+                            end
                         end
                     8:  // Link register
                         begin
-                            registers_ff[1].value          <= write_value;
-                            registers_ff[1].value_valid    <= 1;
+                            if(registers_ff[1].rs_id == write_rs_id) begin
+                                registers_ff[1].value          <= write_value;
+                                registers_ff[1].value_valid    <= 1;
+                            end
                         end
                     9:  // Count register
                         begin
-                            registers_ff[2].value          <= write_value;
-                            registers_ff[2].value_valid    <= 1;
+                            if(registers_ff[2].rs_id == write_rs_id) begin
+                                registers_ff[2].value          <= write_value;
+                                registers_ff[2].value_valid    <= 1;
+                            end
                         end
                     default:
                         begin

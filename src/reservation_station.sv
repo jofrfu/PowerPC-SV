@@ -117,16 +117,26 @@ module reservation_station #(
         else begin
             // Add the request, if an entry is available
             if(can_take && take_valid) begin
-                reservation_stations_ff[id_take - RS_OFFSET].valid          <= 1;
-                reservation_stations_ff[id_take - RS_OFFSET].control        <= control_in;
-                reservation_stations_ff[id_take - RS_OFFSET].op_value_valid <= op_value_valid_in;
-                reservation_stations_ff[id_take - RS_OFFSET].op_rs_id       <= op_rs_id_in;
-                reservation_stations_ff[id_take - RS_OFFSET].op_value       <= op_value_in;
+                reservation_stations_ff[id_take - RS_OFFSET].valid   <= 1;
+                reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
+                for(int i = 0; i < OPERANDS; i++) begin
+                    // The operands needed by the instruction can either come from a register or a unit
+                    if(operand_valid[i]) begin
+                        if(~op_value_valid_in[i] & update_op_rs_id_in[i] == (id_take - RS_OFFSET)) begin
+                            reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= 1;
+                            reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= update_op_value_in[i];
+                        end
+                    end else begin
+                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= op_value_valid_in[i];
+                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= op_value_in[i];
+                    end
+                end
+                reservation_stations_ff[id_take - RS_OFFSET].op_rs_id <= op_rs_id_in;
             end
             
             // Reset the entry, if it was dispatched
             if(can_dispatch && output_ready) begin
-                reservation_stations_ff[id_dispatch - RS_OFFSET].valid      <= 0;
+                reservation_stations_ff[id_dispatch - RS_OFFSET].valid <= 0;
             end
             
             // Update the values of registers in the reservation stations

@@ -31,6 +31,7 @@ module cond_reg_file #(
     // The write port stores the result of units
     input logic                     write_enable[0:7],
     input logic[0:31]               write_value,
+    input logic[0:RS_ID_WIDTH-1]    write_rs_id[0:7],
     
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register
@@ -60,7 +61,7 @@ module cond_reg_file #(
         end
         else begin
             for(int i = 0; i < 8; i++) begin
-                if(write_enable[i]) begin
+                if(write_enable[i] & rs_id_ff[i] == write_rs_id[i]) begin
                     // Write and validate the register content
                     value_ff[i*4 +: 4]  <= write_value[i*4 +: 4];
                     value_valid_ff[i]   <= 1;

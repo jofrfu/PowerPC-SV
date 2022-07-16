@@ -32,6 +32,7 @@ module gp_reg_file #(
     input logic[0:4]                write_addr,
     input logic                     write_enable,
     input logic[0:31]               write_value,
+    input logic[0:RS_ID_WIDTH-1]    write_rs_id,
     
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register
@@ -64,7 +65,7 @@ module gp_reg_file #(
             registers_ff <= {default: {default: '0}};
         end
         else begin
-            if(write_enable) begin
+            if(write_enable & registers_ff[write_addr].rs_id == write_rs_id) begin
                 // Write and validate the register content
                 registers_ff[write_addr].value          <= write_value;
                 registers_ff[write_addr].value_valid    <= 1;

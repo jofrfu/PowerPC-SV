@@ -64,7 +64,7 @@ module sys_unit #(
     assign gpr_result_reg_addr_out = result_reg_addr_stages_ff[1];
     assign spr_result_reg_addr_out = control_stages_ff[1].SPR;
     for(genvar i = 0; i < 8; i++) begin // Packed to unpacked conversion
-        assign cr_enable[i]        = control_stages_ff[1].FXM[i];
+        assign cr_enable[i] = control_stages_ff[1].FXM[i];
     end 
 
     logic[0:31] op1_ff;
