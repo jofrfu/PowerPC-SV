@@ -34,7 +34,7 @@ module sp_reg_file #(
     input logic[0:9]                write_addr,
     input logic                     write_enable,
     input logic[0:31]               write_value,
-    input_logic[0:RS_ID_WIDTH-1]    write_rs_id,
+    input logic[0:RS_ID_WIDTH-1]    write_rs_id,
     
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register

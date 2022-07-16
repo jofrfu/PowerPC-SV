@@ -22,7 +22,14 @@ module ppc_core (
 
     input logic instruction_valid,
     output logic instruction_ready,
-    input  logic[0:31] instruction
+    input  logic[0:31] instruction,
+
+    // TODO: Remove signals below, only needed to keep internal signals
+    output logic top_output_valid,
+    output logic[0:4] top_rs_id_out,
+    output logic[0:4] top_result_reg_addr_out,
+    output logic[0:31] top_result_out,
+    output cond_exception_t top_cr0_xer_out
 );
 
     localparam int RS_ID_WIDTH = 5;
@@ -37,7 +44,7 @@ module ppc_core (
 
         .instruction_valid(instruction_valid),
         .instruction_ready(instruction_ready),
-        .instruction(instruction)
+        .instruction(instruction),
 
         .decode_valid(decode_valid),
         .decode_ready(decode_ready),
@@ -51,6 +58,7 @@ module ppc_core (
     logic alter_CR0;
     logic alter_CA;
     logic alter_OV;
+    logic read_CA;
 
     logic add_sub_valid;
     logic add_sub_ready;
@@ -156,10 +164,10 @@ module ppc_core (
         .clk(clk),
         .rst(rst),
 
-        .read_addr(spr_read_addr),
-        .read_value_valid(spr_read_value_valid),
-        .read_value(spr_read_value),
-        .read_rs_id(spr_read_rs_id),
+        .read_addr({spr_read_addr}),
+        .read_value_valid('{spr_read_value_valid}),
+        .read_value('{spr_read_value}),
+        .read_rs_id('{spr_read_rs_id}),
 
         .write_addr(spr_write_addr),
         .write_enable(spr_write_enable),
@@ -180,7 +188,7 @@ module ppc_core (
     logic[0:31] cr_write_value;
     logic[0:RS_ID_WIDTH-1] cr_write_rs_id[0:7];
     // CR RS ID update port
-    logic cr_update_enable;
+    logic cr_update_enable[0:7];
     logic[0:RS_ID_WIDTH-1] cr_update_rs_id;
 
     cond_reg_file #(
@@ -206,21 +214,21 @@ module ppc_core (
     logic[0:RS_ID_WIDTH-1] gpr_op1_rs_id, gpr_op2_rs_id, gpr_target_rs_id;
     logic gpr_op1_valid, gpr_op2_valid, gpr_target_valid;
 
-    assign gpr_read_addr[0] = decode.control.op1_reg_address;
-    assign gpr_read_addr[1] = decode.control.op2_reg_address;
-    assign gpr_read_addr[2] = decode.control.result_reg_address;
+    assign gpr_read_addr[0] = decode.fixed_point.control.op1_reg_address;
+    assign gpr_read_addr[1] = decode.fixed_point.control.op2_reg_address;
+    assign gpr_read_addr[2] = decode.fixed_point.control.result_reg_address;
     assign gpr_op1_rs_id = gpr_read_rs_id[0];
     assign gpr_op2_rs_id = gpr_read_rs_id[1];
     assign gpr_target_rs_id = gpr_read_rs_id[2];
 
-    assign gpr_update_addr = decode.control.result_reg_address;
+    assign gpr_update_addr = decode.fixed_point.control.result_reg_address;
     assign gpr_update_enable = write_to_gpr;
     assign gpr_update_rs_id = id_taken;
 
     always_comb
     begin
-        if(decode.control.op1_use_imm) begin
-            gpr_op1 = decode.control.op1_immediate;
+        if(decode.fixed_point.control.op1_use_imm) begin
+            gpr_op1 = decode.fixed_point.control.op1_immediate;
             gpr_op1_valid = 1;
         end
         else begin
@@ -228,8 +236,8 @@ module ppc_core (
             gpr_op1_valid = gpr_read_value_valid[0];
         end
 
-        if(decode.control.op2_use_imm) begin
-            gpr_op2 = decode.control.op2_immediate;
+        if(decode.fixed_point.control.op2_use_imm) begin
+            gpr_op2 = decode.fixed_point.control.op2_immediate;
             gpr_op2_valid = 1;
         end
         else begin
@@ -267,7 +275,7 @@ module ppc_core (
 
         .input_valid(add_sub_valid),
         .input_ready(add_sub_ready),
-        .result_reg_addr_in(decode.control.result_reg_addr_in),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
 
         .op1(gpr_op1),
         .op1_valid(gpr_op1_valid),
@@ -296,15 +304,15 @@ module ppc_core (
 
     // Arbiter output signals
     logic arbiter_output_valid;
-    logic arbiter_rs_id_out;
-    logic arbiter_result_reg_addr_out;
-    logic arbiter_result_out;
-    cond_exception_t arbiter_cr0_xer_out
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id_out;
+    logic[0:4] arbiter_result_reg_addr_out;
+    logic[0:31] arbiter_result_out;
+    cond_exception_t arbiter_cr0_xer_out;
 
     // Connect the arbiter output to the GPRs
     assign gpr_write_enable = arbiter_output_valid;
     assign gpr_write_addr = arbiter_result_reg_addr_out;
-    assign gpr_write_value = (arbiter_result_out);
+    assign gpr_write_value = arbiter_result_out;
 
     gpr_write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
@@ -321,10 +329,17 @@ module ppc_core (
         .cr0_xer_in(arbiter_cr0_xer),
 
         .output_valid(arbiter_output_valid),
-        .output_ready(1), // GPRs always take data
+        .output_ready(1'b1), // GPRs always take data
         .rs_id_out(arbiter_rs_id_out),
         .result_reg_addr_out(arbiter_result_reg_addr_out),
         .result_out(arbiter_result_out),
         .cr0_xer_out(arbiter_cr0_xer_out)
     );
+
+    // TODO: Remove omce load/store is available
+    assign top_output_valid = arbiter_output_valid;
+    assign top_rs_id_out = arbiter_rs_id_out;
+    assign top_result_reg_addr_out = arbiter_result_reg_addr_out;
+    assign top_result_out = arbiter_result_out;
+    assign top_cr0_xer_out = arbiter_cr0_xer_out;
 endmodule
