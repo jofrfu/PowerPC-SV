@@ -73,7 +73,7 @@ module sys_wrapper #(
     output logic[0:31] gpr_result,
     //-----------------------------------------------------
 
-    //------ Simple ready-valid interface for GPR results ------
+    //------ Simple ready-valid interface for SPR results ------
     output logic spr_output_valid,
     input logic spr_output_ready,
     output logic[0:RS_ID_WIDTH-1] spr_rs_id_out,
@@ -82,7 +82,7 @@ module sys_wrapper #(
     output logic[0:31] spr_result,
     //-----------------------------------------------------
 
-    //------ Simple ready-valid interface for GPR results ------
+    //------ Simple ready-valid interface for CR results ------
     output logic cr_output_valid,
     input logic cr_output_ready,
     output logic cr_result_enable[0:7],

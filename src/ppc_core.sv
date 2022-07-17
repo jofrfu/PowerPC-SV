@@ -257,12 +257,12 @@ module ppc_core (
 
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
-    logic arbiter_valid[0:1];
-    logic arbiter_ready[0:1];
-    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:1];
-    logic[0:4] arbiter_result_reg_addr[0:1];
-    logic[0:31] arbiter_result[0:1];
-    cond_exception_t arbiter_cr0_xer[0:1];
+    logic arbiter_valid[0:4];
+    logic arbiter_ready[0:4];
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:4];
+    logic[0:4] arbiter_result_reg_addr[0:4];
+    logic[0:31] arbiter_result[0:4];
+    cond_exception_t arbiter_cr0_xer[0:4];
 
     // Add and Sub unit signals
     add_sub_wrapper #(
@@ -302,7 +302,7 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[0])
     );
 
-    // Add and Sub unit signals
+    // Mul unit signals
     mul_wrapper #(
         .RS_OFFSET(0),
         .RS_DEPTH(8),
@@ -337,6 +337,111 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[1])
     );
 
+    // Div unit signals
+    div_wrapper #(
+        .RS_OFFSET(0),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) DIV (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(div_valid),
+        .input_ready(div_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .control(div_decode),
+
+        .id_taken(div_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(arbiter_valid[2]),
+        .output_ready(arbiter_ready[2]),
+        .rs_id_out(arbiter_rs_id[2]),
+        .result_reg_addr_out(arbiter_result_reg_addr[2]),
+        .result(arbiter_result[2]),
+        .cr0_xer(arbiter_cr0_xer[2])
+    );
+
+    // Log unit signals
+    log_wrapper #(
+        .RS_OFFSET(0),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) LOG (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(log_valid),
+        .input_ready(log_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .control(log_decode),
+
+        .id_taken(log_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(arbiter_valid[3]),
+        .output_ready(arbiter_ready[3]),
+        .rs_id_out(arbiter_rs_id[3]),
+        .result_reg_addr_out(arbiter_result_reg_addr[3]),
+        .result(arbiter_result[3]),
+        .cr0_xer(arbiter_cr0_xer[3])
+    );
+
+    // Rot unit signals
+    rot_wrapper #(
+        .RS_OFFSET(0),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) ROT (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(rot_valid),
+        .input_ready(rot_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .control(rot_decode),
+
+        .id_taken(rot_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(arbiter_valid[4]),
+        .output_ready(arbiter_ready[4]),
+        .rs_id_out(arbiter_rs_id[4]),
+        .result_reg_addr_out(arbiter_result_reg_addr[4]),
+        .result(arbiter_result[4]),
+        .cr0_xer(arbiter_cr0_xer[4])
+    );
+
     // Arbiter output signals
     logic arbiter_output_valid;
     logic[0:RS_ID_WIDTH-1] arbiter_rs_id_out;
@@ -344,31 +449,32 @@ module ppc_core (
     logic[0:31] arbiter_result_out;
     cond_exception_t arbiter_cr0_xer_out;
 
-    // Connect the arbiter output to the GPRs
+    // Connect the arbiter output to the GPRs. TODO: Directly assign, when the output signals were removed.
     assign gpr_write_enable = arbiter_output_valid;
     assign gpr_write_addr = arbiter_result_reg_addr_out;
     assign gpr_write_value = arbiter_result_out;
+    assign gpr_write_rs_id = arbiter_rs_id_out;
 
-    gpr_write_back_arbiter #(
+    // TOdo: All units that ar touching XER fields have to also get the complete XER field and should write it out to the SPR file.
+    write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
-        .ARBITER_DEPTH(2)
-    ) GPR_ARBITER (
+        .ARBITER_DEPTH(5)
+    ) ARBITER (
         .clk(clk),
         .rst(rst),
 
-        .input_valid(arbiter_valid),
-        .input_ready(arbiter_ready),
-        .rs_id_in(arbiter_rs_id),
-        .result_reg_addr_in(arbiter_result_reg_addr),
-        .result_in(arbiter_result),
-        .cr0_xer_in(arbiter_cr0_xer),
+        .gpr_input_valid(arbiter_valid),
+        .gpr_input_ready(arbiter_ready),
+        .gpr_rs_id_in(arbiter_rs_id),
+        .gpr_result_reg_addr_in(arbiter_result_reg_addr),
+        .gpr_result_in(arbiter_result),
+        .gpr_cr0_xer_in(arbiter_cr0_xer),
 
-        .output_valid(arbiter_output_valid),
-        .output_ready(1'b1), // GPRs always take data
-        .rs_id_out(arbiter_rs_id_out),
-        .result_reg_addr_out(arbiter_result_reg_addr_out),
-        .result_out(arbiter_result_out),
-        .cr0_xer_out(arbiter_cr0_xer_out)
+        .gpr_output_valid(arbiter_output_valid),
+        .gpr_rs_id_out(arbiter_rs_id_out),
+        .gpr_result_reg_addr_out(arbiter_result_reg_addr_out),
+        .gpr_result_out(arbiter_result_out),
+        .gpr_cr0_xer_out(arbiter_cr0_xer_out)
     );
 
     // TODO: Remove omce load/store is available
