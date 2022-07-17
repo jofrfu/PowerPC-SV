@@ -51,7 +51,7 @@ module instruction_decode(
         MDS_form_t MDS_form = logic_to_MDS_form(instruction);
         //-----------------------------------------------------
         
-        decode_comb = {default: {default: '0}};
+        decode_comb = '{default: '{default: '0}};
         
         case(I_form.OPCD)
             // B Form Branch instructions
@@ -1068,7 +1068,7 @@ module instruction_decode(
     begin
         if(rst) begin
             decode_valid <= 0;
-            decode_ff <= {default: {default: '0}};
+            decode_ff <= '{default: '{default: '0}};
         end
         else begin
             if(enable) begin

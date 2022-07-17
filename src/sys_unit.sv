@@ -118,9 +118,9 @@ module sys_unit #(
     begin
         if(rst) begin
             valid_stages_ff             <= 0;
-            rs_id_stages_ff             <= {default: {default: '0}};
-            result_reg_addr_stages_ff   <= {default: {default: '0}};
-            control_stages_ff           <= {default: {default: '0}};
+            rs_id_stages_ff             <= '{default: '{default: '0}};
+            result_reg_addr_stages_ff   <= '{default: '{default: '0}};
+            control_stages_ff           <= '{default: '{default: '0}};
         end
         else begin
             valid_stages_ff                 <= input_valid;

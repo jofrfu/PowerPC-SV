@@ -97,10 +97,10 @@ module cmp_unit #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            valid_stages_ff             <= {default: '0};
-            rs_id_stages_ff             <= {default: {default: '0}};
-            result_reg_addr_stages_ff   <= {default: {default: '0}};
-            control_ff                  <= {default: '0};
+            valid_stages_ff             <= '{default: '0};
+            rs_id_stages_ff             <= '{default: '{default: '0}};
+            result_reg_addr_stages_ff   <= '{default: '{default: '0}};
+            control_ff                  <= '{default: '0};
             
             op1_ff <= 0;
             op2_ff <= 0;

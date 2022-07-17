@@ -87,7 +87,7 @@ module sp_reg_file #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            registers_ff <= {default: {default: '0}};
+            registers_ff <= '{default: '{default: '0}};
         end
         else begin
             if(write_enable) begin

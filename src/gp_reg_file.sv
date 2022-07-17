@@ -62,7 +62,7 @@ module gp_reg_file #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            registers_ff <= {default: {default: '0}};
+            registers_ff <= '{default: '{default: '0}};
         end
         else begin
             if(write_enable & registers_ff[write_addr].rs_id == write_rs_id) begin

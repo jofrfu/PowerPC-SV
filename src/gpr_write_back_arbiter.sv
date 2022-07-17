@@ -43,7 +43,7 @@ module gpr_write_back_arbiter #(
 
     always_comb
     begin
-        input_ready = {default: 0};
+        input_ready = '{default: 0};
         next = 0;
 
         if(input_valid[pointer_ff]) begin

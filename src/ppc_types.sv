@@ -540,7 +540,7 @@ package ppc_types;
     
     // ------ Functions for simpler decoding START ------
     function fixed_point_decode_t decode_load_zero(input D_form_t D_form, input int bytes, logic update, logic algebraic, logic multiple);
-        decode_load_zero = {default: {default: '0}};
+        decode_load_zero = '{default: '{default: '0}};
         if(D_form.RA == 0 && update == 0) begin
             decode_load_zero.control.op1_use_imm = 1;	// immediate is zero by default																			
         end else begin																			
@@ -556,7 +556,7 @@ package ppc_types;
     endfunction
     
     function fixed_point_decode_t decode_load_store_x_form(input X_form_t X_form, input int bytes, logic update, logic algebraic, logic reversed);
-        decode_load_store_x_form = {default: {default: '0}};
+        decode_load_store_x_form = '{default: '{default: '0}};
         if(X_form.RA == 0 && update == 0) begin
             decode_load_store_x_form.control.op1_use_imm = 1;	// immediate is zero by default																			
         end else begin																				

@@ -133,22 +133,22 @@ module add_sub_unit #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            valid_stages_ff             <= {default: '0};
-            rs_id_stages_ff             <= {default: {default: '0}};
-            result_reg_addr_stages_ff   <= {default: {default: '0}};
-            control_stages_ff           <= {default: {default: '0}};
+            valid_stages_ff             <= '{default: '0};
+            rs_id_stages_ff             <= '{default: '{default: '0}};
+            result_reg_addr_stages_ff   <= '{default: '{default: '0}};
+            control_stages_ff           <= '{default: '{default: '0}};
             
-            carry_ff <= {default: '0};
+            carry_ff <= '{default: '0};
             
-            op1_ff <= {default: {default: '0}};
-            op2_ff <= {default: {default: '0}};
+            op1_ff <= '{default: '{default: '0}};
+            op2_ff <= '{default: '{default: '0}};
             
             sum_ff              <= 0;
             carry_generate_ff   <= 0;
             carry_propagate_ff  <= 0;
             
             result <= 0;
-            cr0_xer <= {default: '0};
+            cr0_xer <= '{default: '0};
         end
         else begin
             if(pipe_enable[0]) begin

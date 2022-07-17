@@ -55,9 +55,9 @@ module cond_reg_file #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            value_valid_ff <= {default: '0};
+            value_valid_ff <= '{default: '0};
             value_ff <= 0;
-            rs_id_ff <= {default: '0};
+            rs_id_ff <= '{default: '0};
         end
         else begin
             for(int i = 0; i < 8; i++) begin

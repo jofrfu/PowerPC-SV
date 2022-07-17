@@ -260,7 +260,7 @@ module sys_wrapper #(
                     rs_output_valid = 0;
                     rs_id_to_unit = 0;
                     rs_op = 0;
-                    rs_control_out = {default: {default: '0}};
+                    rs_control_out = '{default: '{default: '0}};
                 end
             3'b100:
                 begin

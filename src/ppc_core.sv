@@ -257,12 +257,12 @@ module ppc_core (
 
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
-    logic arbiter_valid[0:0];
-    logic arbiter_ready[0:0];
-    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:0];
-    logic[0:4] arbiter_result_reg_addr[0:0];
-    logic[0:31] arbiter_result[0:0];
-    cond_exception_t arbiter_cr0_xer[0:0];
+    logic arbiter_valid[0:1];
+    logic arbiter_ready[0:1];
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:1];
+    logic[0:4] arbiter_result_reg_addr[0:1];
+    logic[0:31] arbiter_result[0:1];
+    cond_exception_t arbiter_cr0_xer[0:1];
 
     // Add and Sub unit signals
     add_sub_wrapper #(
@@ -302,6 +302,41 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[0])
     );
 
+    // Add and Sub unit signals
+    mul_wrapper #(
+        .RS_OFFSET(0),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) MUL (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(mul_valid),
+        .input_ready(mul_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .control(mul_decode),
+
+        .id_taken(mul_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(arbiter_valid[1]),
+        .output_ready(arbiter_ready[1]),
+        .rs_id_out(arbiter_rs_id[1]),
+        .result_reg_addr_out(arbiter_result_reg_addr[1]),
+        .result(arbiter_result[1]),
+        .cr0_xer(arbiter_cr0_xer[1])
+    );
+
     // Arbiter output signals
     logic arbiter_output_valid;
     logic[0:RS_ID_WIDTH-1] arbiter_rs_id_out;
@@ -316,7 +351,7 @@ module ppc_core (
 
     gpr_write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
-        .ARBITER_DEPTH(1)
+        .ARBITER_DEPTH(2)
     ) GPR_ARBITER (
         .clk(clk),
         .rst(rst),

@@ -112,7 +112,7 @@ module reservation_station #(
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            reservation_stations_ff <= {default: {default: '0}};
+            reservation_stations_ff <= '{default: '{default: '0}};
         end
         else begin
             // Add the request, if an entry is available
