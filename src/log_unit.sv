@@ -184,10 +184,8 @@ module log_unit #(
 
                 result  <= result_comb;
                 cr0_xer.CR0_valid <= control_stages_ff[1].alter_CR0;
-                cr0_xer.OV = 0;
-                cr0_xer.OV_valid = 0;
-                cr0_xer.CA = 0;
-                cr0_xer.CA_valid = 0;
+                cr0_xer.xer = 0;
+                cr0_xer.xer_valid = 0;
             end
         end
     end

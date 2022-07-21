@@ -29,6 +29,7 @@ module mul_unit #(
     
     input logic[0:31] op1,
     input logic[0:31] op2,
+    input logic[0:31] xer,
     input mul_decode_t control,
     
     output logic output_valid,
@@ -51,6 +52,7 @@ module mul_unit #(
 
     logic[0:32] op1_ff[0:2];
     logic[0:32] op2_ff[0:2];
+    logic[0:31] xer_ff[0:2];
     
     logic[0:32] op1_comb;
     logic[0:32] op2_comb;
@@ -84,6 +86,8 @@ module mul_unit #(
     
     always_comb
     begin
+        logic OV = 0; 
+
         if(control_stages_ff[2].mul_higher) begin
             result_comb = result_all_ff[2:33];
         end
@@ -94,10 +98,10 @@ module mul_unit #(
         // Check overflow for lower part of the result
         if(op1_ff[2][0] ^ op2_ff[2][0]) begin
             if(result_all_ff[0:34] != 35'h7FFFFFFFF) begin
-                cr0_xer_comb.OV = 1;
+                OV = 1;
             end
             else begin
-                cr0_xer_comb.OV = 0;
+                OV = 0;
             end
         end
         else begin
@@ -106,16 +110,24 @@ module mul_unit #(
             // result has to be checked as well
             // (if it's one, the result would be signed, which is incorrect)
             if(result_all_ff[0:34] != 35'h0) begin
-                cr0_xer_comb.OV = 1;
+                OV = 1;
             end
             else begin
-                cr0_xer_comb.OV = 0;
+                OV = 0;
             end
         end
 
-        cr0_xer_comb.OV_valid   = control_stages_ff[2].alter_OV;
-        cr0_xer_comb.CA         = 0;
-        cr0_xer_comb.CA_valid   = 0;
+        cr0_xer_comb.xer = xer_ff[2];
+
+        if(control_stages_ff[2].alter_OV) begin
+            cr0_xer_comb.xer[1] = OV;
+            cr0_xer_comb.xer[0] = xer_ff[2][0] | OV;
+        end
+        else begin
+            cr0_xer_comb.xer[1] = xer_ff[2][1];
+            cr0_xer_comb.xer[0] = xer_ff[2][0];
+        end
+        cr0_xer_comb.xer_valid  = control_stages_ff[2].alter_OV;
         cr0_xer_comb.CR0_valid  = control_stages_ff[2].alter_CR0;
     end
     
@@ -141,7 +153,9 @@ module mul_unit #(
             control_stages_ff   <= '{default: '{default: '0}};
             op1_ff              <= '{default: '{default: '0}};
             op2_ff              <= '{default: '{default: '0}};
+            xer_ff              <= '{default: '{default: '0}};
             result              <= 0;
+            cr0_xer             <= '{default: '0};
         end 
         else begin
             if(pipe_enable[0]) begin
@@ -152,6 +166,7 @@ module mul_unit #(
 
                 op1_ff[0]   <= op1;
                 op2_ff[0]   <= op2;
+                xer_ff[0]   <= xer;
             end
 
             if(pipe_enable[1]) begin
@@ -162,6 +177,7 @@ module mul_unit #(
             
                 op1_ff[1]   <= op1_comb;
                 op2_ff[1]   <= op2_comb;
+                xer_ff[1]   <= xer_ff[0];
             end
 
             if(pipe_enable[2]) begin
@@ -172,6 +188,7 @@ module mul_unit #(
 
                 op1_ff[2]   <= op1_ff[1];
                 op2_ff[2]   <= op2_ff[1];
+                xer_ff[2]   <= xer_ff[1];
 
                 result_all_ff <= result_all;
             end

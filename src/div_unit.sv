@@ -29,6 +29,7 @@ module div_unit #(
     
     input logic[0:31] op1,
     input logic[0:31] op2,
+    input logic[0:31] xer,
     input div_decode_t control,
     
     output logic output_valid,
@@ -47,6 +48,7 @@ module div_unit #(
 
     logic[0:31] op1_ff[0:1];
     logic[0:31] op2_ff[0:1];
+    logic[0:31] xer_ff[0:2];
 
     logic op1_sign_ff;
     logic op2_sign_ff;
@@ -100,6 +102,7 @@ module div_unit #(
 
             op1_ff <= '{default: '{default: '0}};
             op2_ff <= '{default: '{default: '0}};
+            xer_ff <= '{default: '{default: '0}};
 
             op1_sign_ff <= 0;
             op2_sign_ff <= 0;
@@ -113,6 +116,7 @@ module div_unit #(
 
                 op1_ff[0] <= op1;
                 op2_ff[0] <= op2;
+                xer_ff[0] <= xer;
             end
 
             if(pipe_enable[1]) begin
@@ -123,6 +127,7 @@ module div_unit #(
 
                 op1_ff[1] <= op1_comb;
                 op2_ff[1] <= op2_comb;
+                xer_ff[1] <= xer_ff[0];
 
                 op1_sign_ff <= op1_sign_comb;
                 op2_sign_ff <= op2_sign_comb;
@@ -182,6 +187,8 @@ module div_unit #(
             i_ff <= 0;
             acccumulator_ff <= 0;
             quotient_ff <= 0;
+
+            xer_ff[2] <= 0;
         end
         else begin
             if(busy_ff) begin
@@ -204,6 +211,7 @@ module div_unit #(
                 rs_id_ff <= rs_id_stages_ff[1];
                 result_reg_addr_ff <= result_reg_addr_stages_ff[1];
                 div_control_ff <= control_stages_ff[1];
+                xer_ff[2] <= xer_ff[1];
                 result_sign_ff <= op1_sign_ff ^ op2_sign_ff;
 
                 i_ff <= 0;
@@ -257,10 +265,16 @@ module div_unit #(
             result_comb = final_quotient_ff;
         end
 
-        cr0_xer_comb.OV = OV_ff;
-        cr0_xer_comb.OV_valid = div_control_ff.alter_OV;
-        cr0_xer_comb.CA = 0;
-        cr0_xer_comb.CA_valid = 0;
+        cr0_xer_comb.xer = xer_ff[2];
+        if(div_control_ff.alter_OV) begin
+            cr0_xer_comb.xer[1] = OV_ff;
+            cr0_xer_comb.xer[0] = xer_ff[2][0] | OV_ff;
+        end
+        else begin
+            cr0_xer_comb.xer[1] = xer_ff[2][1];
+            cr0_xer_comb.xer[0] = xer_ff[2][0];
+        end
+
         cr0_xer_comb.CR0_valid = div_control_ff.alter_CR0;
     end
 

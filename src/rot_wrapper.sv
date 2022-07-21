@@ -38,6 +38,9 @@ module rot_wrapper #(
     input logic[0:31] target,
     input logic target_valid,
     input logic[0:RS_ID_WIDTH-1] target_rs_id,
+    input logic[0:31] xer,
+    input logic xer_valid,
+    input logic[0:RS_ID_WIDTH-1] xer_rs_id,
     input rotate_decode_t control,
 
     output logic[0:RS_ID_WIDTH-1] id_taken,
@@ -48,6 +51,13 @@ module rot_wrapper #(
     
     input logic[0:RS_ID_WIDTH-1]    update_op_rs_id_in,
     input logic[0:31]               update_op_value_in,
+    //-------------------------------------------------------------
+
+    //------ Simple valid interface for updated XER operands ------
+    input logic                     update_xer_valid,
+    
+    input logic[0:RS_ID_WIDTH-1]    update_xer_rs_id_in,
+    input logic[0:31]               update_xer_value_in,
     //-------------------------------------------------------------
     
     //------ Simple ready-valid interface for results ------
@@ -75,12 +85,12 @@ module rot_wrapper #(
     logic rs_output_valid;
     logic rs_output_ready;
 
-    logic[0:31] rs_op1, rs_op2, rs_target;
+    logic[0:31] rs_op1, rs_op2, rs_target, rs_xer;
     control_t rs_control_out;
     logic[0:RS_ID_WIDTH-1] rs_id_to_unit;
 
     reservation_station #(
-        .OPERANDS(3),
+        .OPERANDS(4),
         .RS_OFFSET(RS_OFFSET),
         .RS_DEPTH(RS_DEPTH),
         .RS_ID_WIDTH(RS_ID_WIDTH),
@@ -92,21 +102,21 @@ module rot_wrapper #(
         .take_valid(input_valid),
         .take_ready(input_ready),
 
-        .op_value_valid_in({op1_valid, op2_valid, target_valid}),
-        .op_rs_id_in({op1_rs_id, op2_rs_id, target_rs_id}),
-        .op_value_in({op1, op2, target}),
+        .op_value_valid_in({op1_valid, op2_valid, target_valid, xer_valid}),
+        .op_rs_id_in({op1_rs_id, op2_rs_id, target_rs_id, xer_rs_id}),
+        .op_value_in({op1, op2, target, xer}),
         .control_in(rs_control_in),
 
         .id_taken(id_taken),
 
-        .operand_valid({update_op_valid, update_op_valid, update_op_valid}),
-        .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in, update_op_rs_id_in}),
-        .update_op_value_in({update_op_value_in, update_op_value_in, update_op_value_in}),
+        .operand_valid({update_op_valid, update_op_valid, update_op_valid, update_xer_valid}),
+        .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in, update_op_rs_id_in, update_xer_rs_id_in}),
+        .update_op_value_in({update_op_value_in, update_op_value_in, update_op_value_in, update_xer_value_in}),
     
         .output_valid(rs_output_valid),
         .output_ready(rs_output_ready),
 
-        .op_value_out('{rs_op1, rs_op2, rs_target}),
+        .op_value_out('{rs_op1, rs_op2, rs_target, rs_xer}),
         .control_out(rs_control_out),
         .op_rs_id_out(rs_id_to_unit)
     );
@@ -126,6 +136,7 @@ module rot_wrapper #(
         .op1(rs_op1),
         .op2(rs_op2),
         .target(rs_target),
+        .xer(rs_xer),
         .control(rs_control_out.rot),
 
         .output_valid(output_valid),

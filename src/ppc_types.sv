@@ -575,10 +575,8 @@ package ppc_types;
     // Used to set bits in CR0 and XER
     typedef struct {
         // XER
-        logic OV_valid;
-        logic OV;
-        logic CA_valid;
-        logic CA;
+        logic xer_valid;
+        logic[0:31] xer;
         // CR0
         logic CR0_valid;
     } cond_exception_t;

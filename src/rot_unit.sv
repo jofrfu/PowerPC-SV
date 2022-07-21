@@ -30,6 +30,7 @@ module rot_unit #(
     input logic[0:31] op1,
     input logic[0:31] op2,
     input logic[0:31] target,
+    input logic[0:31] xer,
     input rotate_decode_t control,
     
     output logic output_valid,
@@ -53,6 +54,7 @@ module rot_unit #(
     logic[0:31] op1_ff[0:2];
     logic[0:5] op2_ff[0:1], op2_comb; // Op2 is the shift operand
     logic[0:31] target_ff[0:2]; // Content of target register is used as a third operand
+    logic[0:31] xer_ff[0:2];
 
     logic[0:4] mask_begin_ff, mask_begin_comb;
     logic[0:4] mask_end_ff, mask_end_comb;
@@ -123,25 +125,24 @@ module rot_unit #(
 
     always_comb
     begin
+
+        cr0_xer_comb.xer = xer_ff[2];
+
         if(control_stages_ff[2].mask_insert) begin
             result_comb = (shifted_ff & mask_ff) | (target_ff[2] & ~mask_ff);
-            cr0_xer_comb.CA = 0;
-            cr0_xer_comb.CA_valid = 0;
+            cr0_xer_comb.xer_valid = 0;
         end
         else if(control_stages_ff[2].shift & ~control_stages_ff[2].left & control_stages_ff[2].sign_extend) begin
             logic[0:31] sign = {32{op1_ff[2][0]}};
             result_comb = (shifted_ff & mask_ff) | (sign & ~mask_ff);
-            cr0_xer_comb.CA = sign & ((shifted_ff & ~mask_ff) != 0);
-            cr0_xer_comb.CA_valid = 1;
+            cr0_xer_comb.xer[2] = sign & ((shifted_ff & ~mask_ff) != 0);
+            cr0_xer_comb.xer_valid = 1;
         end
         else begin
             result_comb = shifted_ff & mask_ff;
-            cr0_xer_comb.CA = 0;
-            cr0_xer_comb.CA_valid = 0;
+            cr0_xer_comb.xer_valid = 0;
         end
 
-        cr0_xer_comb.OV = 0;
-        cr0_xer_comb.OV_valid = 0;
         cr0_xer_comb.CR0_valid = control_stages_ff[2].alter_CR0;
     end
 
@@ -169,6 +170,7 @@ module rot_unit #(
             op1_ff <= '{default: '{default: '0}};
             op2_ff <= '{default: '{default: '0}};
             target_ff <= '{default: '{default: '0}};
+            xer_ff <= '{default: '{default: '0}};
 
             mask_begin_ff <= 0;
             mask_end_ff <= 0;
@@ -191,6 +193,7 @@ module rot_unit #(
                 op1_ff[0]   <= op1;
                 op2_ff[0]   <= op2;
                 target_ff[0]<= target;
+                xer_ff[0]   <= xer;
             end
 
             if(pipe_enable[1]) begin
@@ -206,6 +209,7 @@ module rot_unit #(
                 op1_ff[1]   <= op1_ff[0];
                 op2_ff[1]   <= op2_ff[0];
                 target_ff[1]<= target_ff[0];
+                xer_ff[1]   <= xer_ff[0];
             end
 
             if(pipe_enable[2]) begin
@@ -216,6 +220,7 @@ module rot_unit #(
                 
                 op1_ff[2]   <= op1_ff[1];
                 target_ff[2]<= target_ff[1];
+                xer_ff[2]   <= xer_ff[1];
 
                 mask_ff <= mask_comb;
                 shifted_ff <= shifted_comb;

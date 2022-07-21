@@ -29,7 +29,7 @@ module add_sub_unit #(
     
     input logic[0:31] op1,
     input logic[0:31] op2,
-    input logic carry_in,   // Assigned to operand 3 at index 0 in RS
+    input logic[0:31] xer_in,   // Assigned to operand 3 at index 0 in RS
     input add_sub_decode_t control,
     
     output logic output_valid,
@@ -50,6 +50,7 @@ module add_sub_unit #(
     assign rs_id_out = rs_id_stages_ff[3];
     assign result_reg_addr_out = result_reg_addr_stages_ff[3];
     
+    logic[0:31] xer_ff[0:2];
     logic carry_ff[0:2];
 
     logic[0:31] op1_ff[0:1];
@@ -63,7 +64,7 @@ module add_sub_unit #(
         if(control_stages_ff[0].subtract) begin
             op1_comb = ~op1_ff[0];
             if(control_stages_ff[0].add_CA) begin
-                carry_comb = carry_ff[0];
+                carry_comb = xer_ff[0][2]; // Carry sits at bit 2 of xer
             end
             else begin
                 carry_comb = 1;
@@ -71,7 +72,7 @@ module add_sub_unit #(
         end
         else if(control_stages_ff[0].add_CA) begin
             op1_comb = op1_ff[0];
-            carry_comb = carry_ff[0];
+            carry_comb = xer_ff[0][2]; // Carry sits at bit 2 of xer
         end
         else begin
             op1_comb = op1_ff[0];
@@ -107,12 +108,26 @@ module add_sub_unit #(
             carry[i] = carry_generate_ff[i] | (carry_propagate_ff[i] & carry[i+1]);
         end
         result_comb = sum_ff ^ carry[1:32];
-        cr0_xer_comb.CA = carry[0];
-        cr0_xer_comb.OV = carry[0] ^ carry[1];
+        cr0_xer_comb.xer = xer_ff[2];
+
+        if(control_stages_ff[2].alter_CA) begin
+            cr0_xer_comb.xer[2] = carry[0]; // Carry sits at bit 2
+        end
+        else begin
+            cr0_xer_comb.xer[2] = xer_ff[2];
+        end
+
+        if(control_stages_ff[2].alter_OV) begin
+            cr0_xer_comb.xer[1] = carry[0] ^ carry[1]; // Overflow sits at bit 1
+            cr0_xer_comb.xer[0] = xer_ff[2][0] | cr0_xer_comb.xer[1]; // Summary overflow gets updated
+        end
+        else begin
+            cr0_xer_comb.xer[1] = xer_ff[2][1];
+            cr0_xer_comb.xer[0] = xer_ff[2][0];
+        end
         
         // Set valid signals
-        cr0_xer_comb.CA_valid = control_stages_ff[2].alter_CA;
-        cr0_xer_comb.OV_valid = control_stages_ff[2].alter_OV;
+        cr0_xer_comb.xer_valid = control_stages_ff[2].alter_CA | control_stages_ff[2].alter_OV;
         cr0_xer_comb.CR0_valid = control_stages_ff[2].alter_CR0;
     end
     
@@ -138,7 +153,7 @@ module add_sub_unit #(
             result_reg_addr_stages_ff   <= '{default: '{default: '0}};
             control_stages_ff           <= '{default: '{default: '0}};
             
-            carry_ff <= '{default: '0};
+            xer_ff <= '{default: '{default: '0}};
             
             op1_ff <= '{default: '{default: '0}};
             op2_ff <= '{default: '{default: '0}};
@@ -157,7 +172,7 @@ module add_sub_unit #(
                 result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
                 control_stages_ff[0]            <= control;
                 
-                carry_ff[0] <= carry_in;
+                xer_ff[0] <= xer_in;
                 op1_ff[0]   <= op1;
                 op2_ff[0]   <= op2;
             end
@@ -169,6 +184,7 @@ module add_sub_unit #(
                 control_stages_ff[1]          <= control_stages_ff[0];
                 
                 carry_ff[1] <= carry_comb;
+                xer_ff[1]   <= xer_ff[0];
                 op1_ff[1] <= op1_comb;
                 op2_ff[1] <= op2_ff[0];
             end
@@ -180,6 +196,7 @@ module add_sub_unit #(
                 control_stages_ff[2]          <= control_stages_ff[1];
                 
                 carry_ff[2] <= carry_ff[1];
+                xer_ff[2]   <= xer_ff[1];
                 
                 sum_ff              <= sum_comb;
                 carry_generate_ff   <= carry_generate_comb;

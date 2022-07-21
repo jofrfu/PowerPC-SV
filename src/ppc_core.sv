@@ -56,9 +56,8 @@ module ppc_core (
     logic write_to_spr;
     logic write_to_cr;
     logic alter_CR0;
-    logic alter_CA;
-    logic alter_OV;
-    logic read_CA;
+    logic alter_xer;
+    logic read_xer;
 
     logic add_sub_valid;
     logic add_sub_ready;
@@ -250,9 +249,9 @@ module ppc_core (
     end
 
     // SPR read bus signals. Address 1 refers to the XER.
-    assign spr_read_addr = read_CA ? 1 : sys_decode.SPR;
-    assign spr_update_addr = alter_CA ? 1 : sys_decode.SPR;
-    assign spr_update_enable = alter_CA | write_to_spr;
+    assign spr_read_addr = read_xer ? 1 : sys_decode.SPR;
+    assign spr_update_addr = alter_xer ? 1 : sys_decode.SPR;
+    assign spr_update_enable = alter_xer | write_to_spr;
     assign spr_update_rs_id = id_taken;
 
 
@@ -283,9 +282,9 @@ module ppc_core (
         .op2(gpr_op2),
         .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
-        .carry_in(spr_read_value[2]),   // bit 2 is the carry bit
-        .carry_valid(spr_read_value_valid),
-        .carry_rs_id(spr_read_rs_id),
+        .xer_in(spr_read_value),
+        .xer_valid(spr_read_value_valid | ~read_xer),
+        .xer_rs_id(spr_read_rs_id),
         .control(add_sub_decode),
 
         .id_taken(add_sub_id),
@@ -293,6 +292,10 @@ module ppc_core (
         .update_op_valid(gpr_write_enable),
         .update_op_rs_id_in(gpr_write_rs_id),
         .update_op_value_in(gpr_write_value),
+
+        .update_xer_valid(spr_write_enable),
+        .update_xer_rs_id_in(spr_write_rs_id),
+        .update_xer_value_in(spr_write_value),
 
         .output_valid(arbiter_valid[0]),
         .output_ready(arbiter_ready[0]),
@@ -319,8 +322,11 @@ module ppc_core (
         .op1_valid(gpr_op1_valid),
         .op1_rs_id(gpr_op1_rs_id),
         .op2(gpr_op2),
-        .op2_valid(gpr_op2_valid),
+        .op2_valid(gpr_op2_valid | ~read_xer),
         .op2_rs_id(gpr_op2_rs_id),
+        .xer(spr_read_value),
+        .xer_valid(spr_read_value_valid ),
+        .xer_rs_id(spr_read_rs_id),
         .control(mul_decode),
 
         .id_taken(mul_id),
@@ -328,6 +334,10 @@ module ppc_core (
         .update_op_valid(gpr_write_enable),
         .update_op_rs_id_in(gpr_write_rs_id),
         .update_op_value_in(gpr_write_value),
+
+        .update_xer_valid(spr_write_enable),
+        .update_xer_rs_id_in(spr_write_rs_id),
+        .update_xer_value_in(spr_write_value),
 
         .output_valid(arbiter_valid[1]),
         .output_ready(arbiter_ready[1]),
@@ -356,6 +366,9 @@ module ppc_core (
         .op2(gpr_op2),
         .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
+        .xer(spr_read_value),
+        .xer_valid(spr_read_value_valid ),
+        .xer_rs_id(spr_read_rs_id),
         .control(div_decode),
 
         .id_taken(div_id),
@@ -363,6 +376,10 @@ module ppc_core (
         .update_op_valid(gpr_write_enable),
         .update_op_rs_id_in(gpr_write_rs_id),
         .update_op_value_in(gpr_write_value),
+
+        .update_xer_valid(spr_write_enable),
+        .update_xer_rs_id_in(spr_write_rs_id),
+        .update_xer_value_in(spr_write_value),
 
         .output_valid(arbiter_valid[2]),
         .output_ready(arbiter_ready[2]),
@@ -426,6 +443,12 @@ module ppc_core (
         .op2(gpr_op2),
         .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
+        .target(gpr_target),
+        .target_valid(gpr_target_valid),
+        .target_rs_id(gpr_target_rs_id),
+        .xer(spr_read_value),
+        .xer_valid(spr_read_value_valid ),
+        .xer_rs_id(spr_read_rs_id),
         .control(rot_decode),
 
         .id_taken(rot_id),
@@ -433,6 +456,10 @@ module ppc_core (
         .update_op_valid(gpr_write_enable),
         .update_op_rs_id_in(gpr_write_rs_id),
         .update_op_value_in(gpr_write_value),
+
+        .update_xer_valid(spr_write_enable),
+        .update_xer_rs_id_in(spr_write_rs_id),
+        .update_xer_value_in(spr_write_value),
 
         .output_valid(arbiter_valid[4]),
         .output_ready(arbiter_ready[4]),
