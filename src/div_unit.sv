@@ -102,7 +102,7 @@ module div_unit #(
 
             op1_ff <= '{default: '{default: '0}};
             op2_ff <= '{default: '{default: '0}};
-            xer_ff <= '{default: '{default: '0}};
+            xer_ff[0:1] <= '{default: '{default: '0}};
 
             op1_sign_ff <= 0;
             op2_sign_ff <= 0;

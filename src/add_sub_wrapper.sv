@@ -35,7 +35,7 @@ module add_sub_wrapper #(
     input logic[0:31] op2,
     input logic op2_valid,
     input logic[0:RS_ID_WIDTH-1] op2_rs_id,
-    input logic xer_in,
+    input logic[0:31] xer_in,
     input logic xer_valid,
     input logic[0:RS_ID_WIDTH-1] xer_rs_id,
     input add_sub_decode_t control,

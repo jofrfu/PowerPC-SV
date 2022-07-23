@@ -29,7 +29,7 @@ module add_sub_unit #(
     
     input logic[0:31] op1,
     input logic[0:31] op2,
-    input logic[0:31] xer_in,   // Assigned to operand 3 at index 0 in RS
+    input logic[0:31] xer_in,
     input add_sub_decode_t control,
     
     output logic output_valid,

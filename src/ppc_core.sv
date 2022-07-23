@@ -28,11 +28,10 @@ module ppc_core (
     output logic top_output_valid,
     output logic[0:4] top_rs_id_out,
     output logic[0:4] top_result_reg_addr_out,
-    output logic[0:31] top_result_out,
-    output cond_exception_t top_cr0_xer_out
+    output logic[0:31] top_result_out
 );
 
-    localparam int RS_ID_WIDTH = 5;
+    localparam int RS_ID_WIDTH = 6;
 
     logic decode_valid;
     logic decode_ready;
@@ -99,7 +98,9 @@ module ppc_core (
     trap_decode_t trap_decode;
     logic[0:RS_ID_WIDTH-1] trap_id;
 
-    dispatcher dispatch(
+    dispatcher #(
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) dispatch(
         .input_valid(decode_valid),
         .input_ready(decode_ready),
         .*
@@ -307,7 +308,7 @@ module ppc_core (
 
     // Mul unit signals
     mul_wrapper #(
-        .RS_OFFSET(0),
+        .RS_OFFSET(8),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) MUL (
@@ -349,7 +350,7 @@ module ppc_core (
 
     // Div unit signals
     div_wrapper #(
-        .RS_OFFSET(0),
+        .RS_OFFSET(16),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) DIV (
@@ -391,7 +392,7 @@ module ppc_core (
 
     // Log unit signals
     log_wrapper #(
-        .RS_OFFSET(0),
+        .RS_OFFSET(24),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) LOG (
@@ -426,7 +427,7 @@ module ppc_core (
 
     // Rot unit signals
     rot_wrapper #(
-        .RS_OFFSET(0),
+        .RS_OFFSET(32),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) ROT (
@@ -482,7 +483,6 @@ module ppc_core (
     assign gpr_write_value = arbiter_result_out;
     assign gpr_write_rs_id = arbiter_rs_id_out;
 
-    // TOdo: All units that ar touching XER fields have to also get the complete XER field and should write it out to the SPR file.
     write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
         .ARBITER_DEPTH(5)
@@ -501,13 +501,22 @@ module ppc_core (
         .gpr_rs_id_out(arbiter_rs_id_out),
         .gpr_result_reg_addr_out(arbiter_result_reg_addr_out),
         .gpr_result_out(arbiter_result_out),
-        .gpr_cr0_xer_out(arbiter_cr0_xer_out)
+
+        .spr_input_valid(1'b0),
+        .spr_input_ready(),
+        .spr_rs_id_in(5'b0),
+        .spr_result_reg_addr_in(10'b0),
+        .spr_result_in(32'b0),
+
+        .spr_output_valid(spr_write_enable),
+        .spr_rs_id_out(spr_write_rs_id),
+        .spr_result_reg_addr_out(spr_write_addr),
+        .spr_result_out(spr_write_value)
     );
 
-    // TODO: Remove omce load/store is available
+    // TODO: Remove once load/store is available
     assign top_output_valid = arbiter_output_valid;
     assign top_rs_id_out = arbiter_rs_id_out;
     assign top_result_reg_addr_out = arbiter_result_reg_addr_out;
     assign top_result_out = arbiter_result_out;
-    assign top_cr0_xer_out = arbiter_cr0_xer_out;
 endmodule

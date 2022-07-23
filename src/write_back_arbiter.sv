@@ -36,7 +36,6 @@ module write_back_arbiter #(
     output logic[0:RS_ID_WIDTH-1] gpr_rs_id_out,
     output logic[0:4] gpr_result_reg_addr_out,
     output logic[0:31] gpr_result_out,
-    output cond_exception_t gpr_cr0_xer_out,
 
     // SPR inputs
     input logic spr_input_valid,
@@ -70,12 +69,32 @@ module write_back_arbiter #(
     logic spr_chosen, spr_chosen_ff;
 
     logic[0:$clog2(ARBITER_DEPTH)-1] pointer, pointer_ff;
-    logic next;
+    logic[0:$clog2(ARBITER_DEPTH)-1] next;
+    logic[0:$clog2(ARBITER_DEPTH)-1] next_without_xer;
 
     always_comb
     begin
         gpr_input_ready = '{default: 0};
         next = 0;
+        next_without_xer = 0;
+
+        // Search next
+        for(int i = 1; i < ARBITER_DEPTH; i++) begin
+            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            if(gpr_input_valid[current]) begin
+                next = current;
+                break;
+            end
+        end
+
+        // Search next without xer access
+        for(int i = 1; i < ARBITER_DEPTH; i++) begin
+            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            if(gpr_input_valid[current] & ~gpr_cr0_xer_in[current].xer_valid) begin
+                next_without_xer = current;
+                break;
+            end
+        end
 
         if(spr_chosen_ff & spr_input_valid) begin
             spr_output_valid_comb = spr_input_valid;
@@ -84,43 +103,78 @@ module write_back_arbiter #(
             spr_result_reg_addr_out_comb = spr_result_reg_addr_in;
             spr_result_out_comb = spr_result_in;
 
+            if(gpr_input_valid[pointer_ff] & ~gpr_cr0_xer_in[pointer_ff].xer_valid) begin
+                gpr_output_valid_comb = gpr_input_valid[pointer_ff];
+                gpr_input_ready[pointer_ff] = 1;
+                gpr_rs_id_out_comb = gpr_rs_id_in[pointer_ff];
+                gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[pointer_ff];
+                gpr_result_out_comb = gpr_result_in[pointer_ff];
+
+                pointer = pointer_ff + 1;
+            end
+            else begin
+                gpr_output_valid_comb = gpr_input_valid[next_without_xer];
+                gpr_input_ready[next_without_xer] = 1;
+                gpr_rs_id_out_comb = gpr_rs_id_in[next_without_xer];
+                gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[next_without_xer];
+                gpr_result_out_comb = gpr_result_in[next_without_xer];
+
+                pointer = next_without_xer + 1;
+            end
+
             spr_chosen = 0;
         end
         else begin
-            // TODO: Implement once the XER field is correctly implemnted in units...
-            spr_chosen = 1;
-        end
+            if(gpr_input_valid[pointer_ff]) begin
+                gpr_output_valid_comb = gpr_input_valid[pointer_ff];
+                gpr_input_ready[pointer_ff] = 1;
+                gpr_rs_id_out_comb = gpr_rs_id_in[pointer_ff];
+                gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[pointer_ff];
+                gpr_result_out_comb = gpr_result_in[pointer_ff];
 
-        // Take the next pointer, if SPR is either not written or it's not SPR input bus' turn
-        if(gpr_input_valid[pointer_ff] & 
-         ~(spr_chosen_ff & (gpr_cr0_xer_in[pointer_ff].alter_CA | gpr_cr0_xer_in[pointer_ff].alter_CA))) begin
-            gpr_output_valid_comb = gpr_input_valid[pointer_ff];
-            gpr_input_ready[pointer_ff] = 1;
-            gpr_rs_id_out_comb = gpr_rs_id_in[pointer_ff];
-            gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[pointer_ff];
-            gpr_result_out_comb = gpr_result_in[pointer_ff];
-            gpr_cr0_xer_out_comb = gpr_cr0_xer_in[pointer_ff];
-
-            pointer = pointer_ff + 1;
-        end
-        else begin
-            for(int i = 1; i < ARBITER_DEPTH; i++) begin
-                logic current = (pointer_ff + i) % ARBITER_DEPTH;
-                if(gpr_input_valid[current] &
-                 ~(spr_chosen_ff & (gpr_cr0_xer_in[current].alter_CA | gpr_cr0_xer_in[current].alter_CA))) begin
-                    next = current;
-                    break;
+                if(gpr_cr0_xer_in[pointer_ff].xer_valid) begin
+                    spr_output_valid_comb = gpr_input_valid[pointer_ff];
+                    spr_input_ready = 1;
+                    spr_rs_id_out_comb = gpr_rs_id_in[pointer_ff];
+                    spr_result_reg_addr_out_comb = 1;   // XER is address 1
+                    spr_result_out_comb = gpr_cr0_xer_in[pointer_ff].xer;
                 end
+                else begin
+                    spr_output_valid_comb = spr_input_valid;
+                    spr_input_ready = 1;
+                    spr_rs_id_out_comb = spr_rs_id_in;
+                    spr_result_reg_addr_out_comb = spr_result_reg_addr_in;
+                    spr_result_out_comb = spr_result_in;
+                end
+
+                pointer = pointer_ff + 1;
             end
+            else begin
+                gpr_output_valid_comb = gpr_input_valid[next];
+                gpr_input_ready[next] = 1;
+                gpr_rs_id_out_comb = gpr_rs_id_in[next];
+                gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[next];
+                gpr_result_out_comb = gpr_result_in[next];
 
-            gpr_output_valid_comb = gpr_input_valid[next];
-            gpr_input_ready[next] = 1;
-            gpr_rs_id_out_comb = gpr_rs_id_in[next];
-            gpr_result_reg_addr_out_comb = gpr_result_reg_addr_in[next];
-            gpr_result_out_comb = gpr_result_in[next];
-            gpr_cr0_xer_out_comb = gpr_cr0_xer_in[next];
+                if(gpr_input_valid[next] & gpr_cr0_xer_in[next].xer_valid) begin
+                    spr_output_valid_comb = gpr_input_valid[next];
+                    spr_input_ready = 1;
+                    spr_rs_id_out_comb = gpr_rs_id_in[next];
+                    spr_result_reg_addr_out_comb = 1;   // XER is address 1
+                    spr_result_out_comb = gpr_cr0_xer_in[next].xer;
+                end
+                else begin
+                    spr_output_valid_comb = spr_input_valid;
+                    spr_input_ready = 1;
+                    spr_rs_id_out_comb = spr_rs_id_in;
+                    spr_result_reg_addr_out_comb = spr_result_reg_addr_in;
+                    spr_result_out_comb = spr_result_in;
+                end
 
-            pointer = next + 1;
+                pointer = next + 1;
+            end
+            
+            spr_chosen = 1;
         end
     end
 
@@ -133,7 +187,13 @@ module write_back_arbiter #(
             gpr_rs_id_out <= 0;
             gpr_result_reg_addr_out <= 0;
             gpr_result_out <= 0;
-            gpr_cr0_xer_out <= '{default: '0};
+
+            spr_chosen_ff <= 0;
+
+            spr_output_valid <= 0;
+            spr_rs_id_out <= 0;
+            spr_result_reg_addr_out <= 0;
+            spr_result_out <= 0;
         end
         else begin
             pointer_ff <= pointer;
@@ -142,7 +202,13 @@ module write_back_arbiter #(
             gpr_rs_id_out <= gpr_rs_id_out_comb;
             gpr_result_reg_addr_out <= gpr_result_reg_addr_out_comb;
             gpr_result_out <= gpr_result_out_comb;
-            gpr_cr0_xer_out <= gpr_cr0_xer_out_comb;
+
+            spr_chosen_ff <= spr_chosen;
+
+            spr_output_valid <= spr_output_valid_comb;
+            spr_rs_id_out <= spr_rs_id_out_comb;
+            spr_result_reg_addr_out <= spr_result_reg_addr_out_comb;
+            spr_result_out <= spr_result_out_comb;
         end
     end
 endmodule
