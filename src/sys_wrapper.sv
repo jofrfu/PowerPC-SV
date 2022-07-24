@@ -35,9 +35,9 @@ module sys_wrapper #(
     input logic[0:31] spr_op,
     input logic spr_op_valid,
     input logic[0:RS_ID_WIDTH-1] spr_op_rs_id,
-    input logic[0:31] cr_op,
-    input logic cr_op_valid,
-    input logic[0:RS_ID_WIDTH-1] cr_op_rs_id,
+    input logic[0:3] cr_op[0:7],
+    input logic cr_op_valid[0:7],
+    input logic[0:RS_ID_WIDTH-1] cr_op_rs_id[0:7],
     input system_decode_t control,
 
     output logic[0:RS_ID_WIDTH-1] id_taken,
@@ -58,10 +58,10 @@ module sys_wrapper #(
     //-------------------------------------------------------------
 
     //------ Simple valid interface for updated CR operands ------
-    input logic                     update_cr_op_valid,
+    input logic                     update_cr_op_valid[0:7],
     
-    input logic[0:RS_ID_WIDTH-1]    update_cr_op_rs_id_in,
-    input logic[0:31]               update_cr_op_value_in,
+    input logic[0:RS_ID_WIDTH-1]    update_cr_op_rs_id_in[0:7],
+    input logic[0:3]                update_cr_op_value_in[0:7],
     //-------------------------------------------------------------
     
     //------ Simple ready-valid interface for GPR results ------
@@ -106,7 +106,8 @@ module sys_wrapper #(
     logic rs_gpr_valid, rs_spr_valid, rs_cr_valid;
     logic rs_gpr_ready, rs_spr_ready, rs_cr_ready;
 
-    logic[0:31] rs_gpr_op, rs_spr_op, rs_cr_op;
+    logic[0:31] rs_gpr_op, rs_spr_op;
+    logic[0:3] rs_cr_op[0:7];
     control_t rs_gpr_control_out, rs_spr_control_out, rs_cr_control_out;
     logic[0:RS_ID_WIDTH-1] rs_gpr_id_to_unit, rs_spr_id_to_unit, rs_cr_id_to_unit;
 
@@ -209,7 +210,8 @@ module sys_wrapper #(
     );
 
     reservation_station #(
-        .OPERANDS(1),
+        .OPERANDS(8),
+        .OPERAND_WIDTH(4),
         .RS_OFFSET(RS_OFFSET),
         .RS_DEPTH(RS_DEPTH),
         .RS_ID_WIDTH(RS_ID_WIDTH),
@@ -221,21 +223,21 @@ module sys_wrapper #(
         .take_valid(input_valid & control.operation == SYS_MOVE_FROM_CR),
         .take_ready(cr_input_ready),
 
-        .op_value_valid_in({cr_op_valid}),
-        .op_rs_id_in({cr_op_rs_id}),
-        .op_value_in({cr_op}),
+        .op_value_valid_in(cr_op_valid),
+        .op_rs_id_in(cr_op_rs_id),
+        .op_value_in(cr_op),
         .control_in(rs_control_in),
 
         .id_taken(cr_id_taken),
 
-        .operand_valid({update_cr_op_valid}),
-        .update_op_rs_id_in({update_cr_op_rs_id_in}),
-        .update_op_value_in({update_cr_op_value_in}),
+        .operand_valid(update_cr_op_valid),
+        .update_op_rs_id_in(update_cr_op_rs_id_in),
+        .update_op_value_in(update_cr_op_value_in),
     
         .output_valid(rs_cr_valid),
         .output_ready(rs_cr_ready),
 
-        .op_value_out('{rs_cr_op}),
+        .op_value_out(rs_cr_op),
         .control_out(rs_cr_control_out),
         .op_rs_id_out(rs_cr_id_to_unit)
     );
@@ -283,7 +285,7 @@ module sys_wrapper #(
                     rs_output_valid = rs_cr_valid;
                     rs_cr_ready     = rs_output_ready;
                     rs_id_to_unit   = rs_cr_id_to_unit;
-                    rs_op           = rs_cr_op;
+                    rs_op           = {rs_cr_op[0], rs_cr_op[1], rs_cr_op[2], rs_cr_op[3], rs_cr_op[4], rs_cr_op[5], rs_cr_op[6], rs_cr_op[7]};
                     rs_control_out  = rs_cr_control_out;
                 end
             3'b110:
@@ -313,7 +315,7 @@ module sys_wrapper #(
                     rs_output_valid = rs_cr_valid;
                     rs_cr_ready     = rs_output_ready;
                     rs_id_to_unit   = rs_cr_id_to_unit;
-                    rs_op           = rs_cr_op;
+                    rs_op           = {rs_cr_op[0], rs_cr_op[1], rs_cr_op[2], rs_cr_op[3], rs_cr_op[4], rs_cr_op[5], rs_cr_op[6], rs_cr_op[7]};
                     rs_control_out  = rs_cr_control_out;
                 end
             3'b011:
@@ -328,7 +330,7 @@ module sys_wrapper #(
                     rs_output_valid = rs_cr_valid;
                     rs_cr_ready     = rs_output_ready;
                     rs_id_to_unit   = rs_cr_id_to_unit;
-                    rs_op           = rs_cr_op;
+                    rs_op           = {rs_cr_op[0], rs_cr_op[1], rs_cr_op[2], rs_cr_op[3], rs_cr_op[4], rs_cr_op[5], rs_cr_op[6], rs_cr_op[7]};
                     rs_control_out  = rs_cr_control_out;
                 end
             3'b111:
@@ -350,7 +352,7 @@ module sys_wrapper #(
                     rs_output_valid = rs_cr_valid;
                     rs_cr_ready     = rs_output_ready;
                     rs_id_to_unit   = rs_cr_id_to_unit;
-                    rs_op           = rs_cr_op;
+                    rs_op           = {rs_cr_op[0], rs_cr_op[1], rs_cr_op[2], rs_cr_op[3], rs_cr_op[4], rs_cr_op[5], rs_cr_op[6], rs_cr_op[7]};
                     rs_control_out  = rs_cr_control_out;
                 end
         endcase

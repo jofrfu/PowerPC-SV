@@ -18,6 +18,7 @@ import ppc_types::*;
 
 module reservation_station #(
     parameter int OPERANDS = 2,     // Describes how many operands are used by instructions
+    parameter int OPERAND_WIDTH = 32,   // Describes the bit width of operands
     parameter int RS_OFFSET = 0,    // The address offset of these particular reservation stations
     parameter int RS_DEPTH = 8,     // Describes the number of reservation station for one unit
     parameter int RS_ID_WIDTH = 5,  // The bit width of the ID (or address) of all reservations stations in the system
@@ -32,7 +33,7 @@ module reservation_station #(
     
     input logic                     op_value_valid_in[0:OPERANDS-1],
     input logic[0:RS_ID_WIDTH-1]    op_rs_id_in[0:OPERANDS-1],
-    input logic[0:31]               op_value_in[0:OPERANDS-1],
+    input logic[0:OPERAND_WIDTH-1] op_value_in[0:OPERANDS-1],
     input CONTROL_TYPE              control_in,
     
     output logic[0:RS_ID_WIDTH-1]   id_taken,
@@ -42,14 +43,14 @@ module reservation_station #(
     input logic                     operand_valid[0:OPERANDS-1],
     
     input logic[0:RS_ID_WIDTH-1]    update_op_rs_id_in[0:OPERANDS-1],
-    input logic[0:31]               update_op_value_in[0:OPERANDS-1],
+    input logic[0:OPERAND_WIDTH-1]  update_op_value_in[0:OPERANDS-1],
     //---------------------------------------------------------
     
     //------ Simple ready-valid interface for output ------
     output logic        output_valid,
     input logic         output_ready,
     
-    output logic[0:31]              op_value_out[0:OPERANDS-1],
+    output logic[0:OPERAND_WIDTH-1] op_value_out[0:OPERANDS-1],
     output CONTROL_TYPE             control_out,
     output logic[0:RS_ID_WIDTH-1]   op_rs_id_out
     //-----------------------------------------------------
@@ -60,7 +61,7 @@ module reservation_station #(
         CONTROL_TYPE control;
         logic op_value_valid[0:OPERANDS-1];
         logic[0:RS_ID_WIDTH-1] op_rs_id[0:OPERANDS-1];
-        logic[0:31] op_value[0:OPERANDS-1];
+        logic[0:OPERAND_WIDTH-1] op_value[0:OPERANDS-1];
     } station_t;
 
     // Storage of reservation stations of a specific unit

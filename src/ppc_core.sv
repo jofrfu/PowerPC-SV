@@ -26,7 +26,7 @@ module ppc_core (
 
     // TODO: Remove signals below, only needed to keep internal signals
     output logic top_output_valid,
-    output logic[0:4] top_rs_id_out,
+    output logic[0:5] top_rs_id_out,
     output logic[0:4] top_result_reg_addr_out,
     output logic[0:31] top_result_out
 );
@@ -257,12 +257,18 @@ module ppc_core (
 
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
-    logic arbiter_valid[0:4];
-    logic arbiter_ready[0:4];
-    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:4];
-    logic[0:4] arbiter_result_reg_addr[0:4];
-    logic[0:31] arbiter_result[0:4];
-    cond_exception_t arbiter_cr0_xer[0:4];
+    logic arbiter_valid[0:5];
+    logic arbiter_ready[0:5];
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:5];
+    logic[0:4] arbiter_result_reg_addr[0:5];
+    logic[0:31] arbiter_result[0:5];
+    cond_exception_t arbiter_cr0_xer[0:5];
+
+    logic arbiter_spr_valid;
+    logic arbiter_spr_ready;
+    logic[0:RS_ID_WIDTH-1] arbiter_spr_rs_id;
+    logic[0:4] arbiter_spr_result_reg_addr;
+    logic[0:31] arbiter_spr_result;
 
     // Add and Sub unit signals
     add_sub_wrapper #(
@@ -470,6 +476,68 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[4])
     );
 
+    logic[0:4] sys_result_reg_addr;
+    assign sys_result_reg_addr = (decode.fixed_point.system.operation == SYS_MOVE_FROM_CR | decode.fixed_point.system.operation == SYS_MOVE_FROM_CR) ? decode.fixed_point.control.result_reg_address :
+                                  decode.fixed_point.system.operation == SYS_MOVE_TO_SPR ? decode.fixed_point.system.SPR : 0;
+
+    sys_wrapper #(
+        .RS_OFFSET(40),
+        .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) SYS (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(sys_valid),
+        .input_ready(sys_ready),
+        .result_reg_addr_in(sys_result_reg_addr),
+
+        .gpr_op(gpr_read_value[0]),
+        .gpr_op_valid(gpr_read_value_valid[0]),
+        .gpr_op_rs_id(gpr_read_rs_id[0]),
+        .spr_op(spr_read_value),
+        .spr_op_valid(spr_read_value_valid),
+        .spr_op_rs_id(spr_read_rs_id),
+        .cr_op({cr_read_value[0:3], cr_read_value[4:7],cr_read_value[8:11], cr_read_value[12:15], cr_read_value[16:19], cr_read_value[20:23], cr_read_value[24:27], cr_read_value[28:31]}),
+        .cr_op_valid(cr_read_value_valid),
+        .cr_op_rs_id(cr_read_rs_id),
+        .control(decode.fixed_point.system),
+
+        .id_taken(sys_id),
+        
+        .update_gpr_op_valid(gpr_write_enable),
+        .update_gpr_op_rs_id_in(gpr_write_rs_id),
+        .update_gpr_op_value_in(gpr_write_value),
+
+        .update_spr_op_valid(spr_write_enable),
+        .update_spr_op_rs_id_in(spr_write_rs_id),
+        .update_spr_op_value_in(spr_write_value),
+
+        .update_cr_op_valid(cr_write_enable),
+        .update_cr_op_rs_id_in(cr_write_rs_id),
+        .update_cr_op_value_in({cr_write_value[0:3], cr_write_value[4:7], cr_write_value[8:11], cr_write_value[12:15], cr_write_value[16:19], cr_write_value[20:23], cr_write_value[24:27], cr_write_value[28:31]}),
+
+        .gpr_output_valid(arbiter_valid[5]),
+        .gpr_output_ready(arbiter_ready[5]),
+        .gpr_rs_id_out(arbiter_rs_id[5]),
+        .gpr_result_reg_addr_out(arbiter_result_reg_addr[5]),
+        .gpr_result(arbiter_result[5]),
+
+        .spr_output_valid(arbiter_spr_valid),
+        .spr_output_ready(arbiter_spr_ready),
+        .spr_rs_id_out(arbiter_spr_rs_id),
+        .spr_result_reg_addr_out(arbiter_spr_result_reg_addr),
+        .spr_result(arbiter_spr_result),
+
+        .cr_output_valid(),
+        .cr_output_ready(1'b1),
+        .cr_result_enable(),
+        .cr_rs_id_out(),
+        .cr_result()
+    );
+
+    assign arbiter_cr0_xer[5] = '{default: '0};
+
     // Arbiter output signals
     logic arbiter_output_valid;
     logic[0:RS_ID_WIDTH-1] arbiter_rs_id_out;
@@ -485,7 +553,7 @@ module ppc_core (
 
     write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
-        .ARBITER_DEPTH(5)
+        .ARBITER_DEPTH(6)
     ) ARBITER (
         .clk(clk),
         .rst(rst),
@@ -502,11 +570,11 @@ module ppc_core (
         .gpr_result_reg_addr_out(arbiter_result_reg_addr_out),
         .gpr_result_out(arbiter_result_out),
 
-        .spr_input_valid(1'b0),
-        .spr_input_ready(),
-        .spr_rs_id_in(5'b0),
-        .spr_result_reg_addr_in(10'b0),
-        .spr_result_in(32'b0),
+        .spr_input_valid(arbiter_spr_valid),
+        .spr_input_ready(arbiter_spr_ready),
+        .spr_rs_id_in(arbiter_spr_rs_id),
+        .spr_result_reg_addr_in(arbiter_spr_result_reg_addr),
+        .spr_result_in(arbiter_spr_result),
 
         .spr_output_valid(spr_write_enable),
         .spr_rs_id_out(spr_write_rs_id),
