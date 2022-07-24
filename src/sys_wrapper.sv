@@ -179,7 +179,7 @@ module sys_wrapper #(
 
     reservation_station #(
         .OPERANDS(1),
-        .RS_OFFSET(RS_OFFSET),
+        .RS_OFFSET(RS_OFFSET + RS_DEPTH),
         .RS_DEPTH(RS_DEPTH),
         .RS_ID_WIDTH(RS_ID_WIDTH),
         .CONTROL_TYPE(control_t)
@@ -212,7 +212,7 @@ module sys_wrapper #(
     reservation_station #(
         .OPERANDS(8),
         .OPERAND_WIDTH(4),
-        .RS_OFFSET(RS_OFFSET),
+        .RS_OFFSET(RS_OFFSET + 2*RS_DEPTH),
         .RS_DEPTH(RS_DEPTH),
         .RS_ID_WIDTH(RS_ID_WIDTH),
         .CONTROL_TYPE(control_t)

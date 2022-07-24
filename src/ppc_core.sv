@@ -270,6 +270,12 @@ module ppc_core (
     logic[0:4] arbiter_spr_result_reg_addr;
     logic[0:31] arbiter_spr_result;
 
+    logic arbiter_cr_valid;
+    logic arbiter_cr_ready;
+    logic[0:RS_ID_WIDTH-1] arbiter_cr_rs_id;
+    logic arbiter_cr_enable[0:7];
+    logic[0:31] arbiter_cr_result;
+
     // Add and Sub unit signals
     add_sub_wrapper #(
         .RS_OFFSET(0),
@@ -480,6 +486,16 @@ module ppc_core (
     assign sys_result_reg_addr = (decode.fixed_point.system.operation == SYS_MOVE_FROM_CR | decode.fixed_point.system.operation == SYS_MOVE_FROM_CR) ? decode.fixed_point.control.result_reg_address :
                                   decode.fixed_point.system.operation == SYS_MOVE_TO_SPR ? decode.fixed_point.system.SPR : 0;
 
+
+    logic cr_read_valid[0:7];
+    always_comb
+    begin
+        for(int i = 0; i < 8; i++) begin
+            // If data is not read by the system instructions (FXM field), it is set to valid.
+            cr_read_valid[i] = cr_read_value_valid[i] | ~decode.fixed_point.system.FXM[i];
+        end
+    end
+
     sys_wrapper #(
         .RS_OFFSET(40),
         .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
@@ -499,7 +515,7 @@ module ppc_core (
         .spr_op_valid(spr_read_value_valid),
         .spr_op_rs_id(spr_read_rs_id),
         .cr_op({cr_read_value[0:3], cr_read_value[4:7],cr_read_value[8:11], cr_read_value[12:15], cr_read_value[16:19], cr_read_value[20:23], cr_read_value[24:27], cr_read_value[28:31]}),
-        .cr_op_valid(cr_read_value_valid),
+        .cr_op_valid(cr_read_valid),
         .cr_op_rs_id(cr_read_rs_id),
         .control(decode.fixed_point.system),
 
@@ -529,11 +545,11 @@ module ppc_core (
         .spr_result_reg_addr_out(arbiter_spr_result_reg_addr),
         .spr_result(arbiter_spr_result),
 
-        .cr_output_valid(),
-        .cr_output_ready(1'b1),
-        .cr_result_enable(),
-        .cr_rs_id_out(),
-        .cr_result()
+        .cr_output_valid(arbiter_cr_valid),
+        .cr_output_ready(arbiter_cr_ready),
+        .cr_result_enable(arbiter_cr_enable),
+        .cr_rs_id_out(arbiter_cr_rs_id),
+        .cr_result(arbiter_cr_result)
     );
 
     assign arbiter_cr0_xer[5] = '{default: '0};
@@ -550,6 +566,18 @@ module ppc_core (
     assign gpr_write_addr = arbiter_result_reg_addr_out;
     assign gpr_write_value = arbiter_result_out;
     assign gpr_write_rs_id = arbiter_rs_id_out;
+
+    logic cr_output_valid;
+    logic cr_output_enable[0:7];
+
+    assign cr_write_enable = {cr_output_enable[0] & cr_output_valid,
+                              cr_output_enable[1] & cr_output_valid,
+                              cr_output_enable[2] & cr_output_valid,
+                              cr_output_enable[3] & cr_output_valid,
+                              cr_output_enable[4] & cr_output_valid,
+                              cr_output_enable[5] & cr_output_valid,
+                              cr_output_enable[6] & cr_output_valid,
+                              cr_output_enable[7] & cr_output_valid};
 
     write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
@@ -579,7 +607,18 @@ module ppc_core (
         .spr_output_valid(spr_write_enable),
         .spr_rs_id_out(spr_write_rs_id),
         .spr_result_reg_addr_out(spr_write_addr),
-        .spr_result_out(spr_write_value)
+        .spr_result_out(spr_write_value),
+
+        .cr_input_valid(arbiter_cr_valid),
+        .cr_input_ready(arbiter_cr_ready),
+        .cr_rs_id_in(arbiter_cr_rs_id),
+        .cr_input_enable(arbiter_cr_enable),
+        .cr_result_in(arbiter_cr_result),
+
+        .cr_output_valid(cr_output_valid),
+        .cr_rs_id_out(cr_write_rs_id),
+        .cr_output_enable(cr_output_enable),
+        .cr_result_out(cr_write_value)
     );
 
     // TODO: Remove once load/store is available
