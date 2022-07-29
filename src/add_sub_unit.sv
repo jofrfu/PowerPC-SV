@@ -125,6 +125,8 @@ module add_sub_unit #(
             cr0_xer_comb.xer[1] = xer_ff[2][1];
             cr0_xer_comb.xer[0] = xer_ff[2][0];
         end
+
+        cr0_xer_comb.so = cr0_xer_comb.xer[0];
         
         // Set valid signals
         cr0_xer_comb.xer_valid = control_stages_ff[2].alter_CA | control_stages_ff[2].alter_OV;

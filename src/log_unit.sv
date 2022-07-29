@@ -29,6 +29,7 @@ module log_unit #(
     
     input logic[0:31] op1,
     input logic[0:31] op2,
+    input logic so,
     input log_decode_t control,
     
     output logic output_valid,
@@ -43,6 +44,8 @@ module log_unit #(
     logic[0:RS_ID_WIDTH-1] rs_id_stages_ff[0:2];
     logic[0:4] result_reg_addr_stages_ff[0:2];
     add_sub_decode_t control_stages_ff[0:1];
+
+    logic so_ff[0:1];
     
     assign output_valid = valid_stages_ff[2];
     assign rs_id_out = rs_id_stages_ff[2];
@@ -128,6 +131,8 @@ module log_unit #(
             rs_id_stages_ff             <= '{default: '{default: '0}};
             result_reg_addr_stages_ff   <= '{default: '{default: '0}};
             control_stages_ff           <= '{default: '{default: '0}};
+
+            so_ff <= '{default: '0};
                         
             op1_ff <= 0;
             op2_ff <= 0;
@@ -154,6 +159,8 @@ module log_unit #(
                 result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
                 control_stages_ff[0]            <= control;
 
+                so_ff[0] <= so;
+
                 op1_ff  <= op1;
                 op2_ff  <= op2;
             end
@@ -163,6 +170,8 @@ module log_unit #(
                 rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
                 result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
                 control_stages_ff[1]            <= control_stages_ff[0];
+
+                so_ff[1] <= so_ff[0];
 
                 and_ff  <= op1_ff & op2_ff;
                 or_ff   <= op1_ff | op2_ff;
@@ -184,6 +193,7 @@ module log_unit #(
 
                 result  <= result_comb;
                 cr0_xer.CR0_valid <= control_stages_ff[1].alter_CR0;
+                cr0_xer.so <= so_ff[1];
                 cr0_xer.xer = 0;
                 cr0_xer.xer_valid = 0;
             end

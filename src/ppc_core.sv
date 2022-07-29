@@ -54,7 +54,6 @@ module ppc_core (
     logic write_to_gpr;
     logic write_to_spr;
     logic write_to_cr;
-    logic alter_CR0;
     logic alter_xer;
     logic read_xer;
 
@@ -335,10 +334,10 @@ module ppc_core (
         .op1_valid(gpr_op1_valid),
         .op1_rs_id(gpr_op1_rs_id),
         .op2(gpr_op2),
-        .op2_valid(gpr_op2_valid | ~read_xer),
+        .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
         .xer(spr_read_value),
-        .xer_valid(spr_read_value_valid ),
+        .xer_valid(spr_read_value_valid | ~read_xer),
         .xer_rs_id(spr_read_rs_id),
         .control(mul_decode),
 
@@ -380,7 +379,7 @@ module ppc_core (
         .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
         .xer(spr_read_value),
-        .xer_valid(spr_read_value_valid ),
+        .xer_valid(spr_read_value_valid | ~read_xer),
         .xer_rs_id(spr_read_rs_id),
         .control(div_decode),
 
@@ -421,6 +420,9 @@ module ppc_core (
         .op2(gpr_op2),
         .op2_valid(gpr_op2_valid),
         .op2_rs_id(gpr_op2_rs_id),
+        .xer(spr_read_value),
+        .xer_valid(spr_read_value_valid | ~read_xer),
+        .xer_rs_id(spr_read_rs_id),
         .control(log_decode),
 
         .id_taken(log_id),
@@ -428,6 +430,10 @@ module ppc_core (
         .update_op_valid(gpr_write_enable),
         .update_op_rs_id_in(gpr_write_rs_id),
         .update_op_value_in(gpr_write_value),
+
+        .update_xer_valid(spr_write_enable),
+        .update_xer_rs_id_in(spr_write_rs_id),
+        .update_xer_value_in(spr_write_value),
 
         .output_valid(arbiter_valid[3]),
         .output_ready(arbiter_ready[3]),
@@ -460,7 +466,7 @@ module ppc_core (
         .target_valid(gpr_target_valid),
         .target_rs_id(gpr_target_rs_id),
         .xer(spr_read_value),
-        .xer_valid(spr_read_value_valid ),
+        .xer_valid(spr_read_value_valid | ~read_xer),
         .xer_rs_id(spr_read_rs_id),
         .control(rot_decode),
 
@@ -482,6 +488,46 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[4])
     );
 
+    cmp_wrapper #(
+        .RS_OFFSET(40),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) CMP (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(cmp_valid),
+        .input_ready(cmp_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .xer_so(spr_read_value[0]),
+        .xer_so_valid(spr_read_value_valid),
+        .xer_so_rs_id(spr_read_rs_id),
+        .control(cmp_decode),
+
+        .id_taken(cmp_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .update_xer_so_valid(spr_write_enable),
+        .update_xer_so_rs_id_in(spr_write_rs_id),
+        .update_xer_so_value_in(spr_write_value[0]),
+
+        .output_valid(),
+        .output_ready(),
+        .rs_id_out(),
+        .result_reg_addr_out(),
+        .result()
+    );
+
     logic[0:4] sys_result_reg_addr;
     assign sys_result_reg_addr = (decode.fixed_point.system.operation == SYS_MOVE_FROM_CR | decode.fixed_point.system.operation == SYS_MOVE_FROM_CR) ? decode.fixed_point.control.result_reg_address :
                                   decode.fixed_point.system.operation == SYS_MOVE_TO_SPR ? decode.fixed_point.system.SPR : 0;
@@ -497,7 +543,7 @@ module ppc_core (
     end
 
     sys_wrapper #(
-        .RS_OFFSET(40),
+        .RS_OFFSET(48),
         .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) SYS (

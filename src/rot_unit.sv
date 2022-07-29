@@ -143,6 +143,7 @@ module rot_unit #(
             cr0_xer_comb.xer_valid = 0;
         end
 
+        cr0_xer_comb.so = cr0_xer_comb.xer[0];
         cr0_xer_comb.CR0_valid = control_stages_ff[2].alter_CR0;
     end
 

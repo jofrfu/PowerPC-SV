@@ -579,6 +579,7 @@ package ppc_types;
         logic[0:31] xer;
         // CR0
         logic CR0_valid;
+        logic so;   // SO is needed for CR0 calculation
     } cond_exception_t;
     // ------ Types for fixed point units END ------
     

@@ -275,6 +275,9 @@ module div_unit #(
             cr0_xer_comb.xer[0] = xer_ff[2][0];
         end
 
+        cr0_xer_comb.so = cr0_xer_comb.xer[0];
+
+        cr0_xer_comb.xer_valid = div_control_ff.alter_OV;
         cr0_xer_comb.CR0_valid = div_control_ff.alter_CR0;
     end
 

@@ -27,10 +27,8 @@ module dispatcher#(
     output logic write_to_gpr,
     output logic write_to_spr,
     output logic write_to_cr,
-    output logic alter_CR0,
-    output logic alter_CA,
-    output logic alter_OV,
-    output logic read_CA,
+    output logic alter_xer,
+    output logic read_xer,
 
     // Output interfaces to each unit
     output logic add_sub_valid,
@@ -109,10 +107,8 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = add_sub_decode.alter_CR0;
-                    alter_CA  = add_sub_decode.alter_CA;
-                    alter_OV  = add_sub_decode.alter_OV;
-                    read_CA   = add_sub_decode.add_CA;
+                    alter_xer = add_sub_decode.alter_OV | add_sub_decode.alter_CA;
+                    read_xer  = add_sub_decode.add_CA | add_sub_decode.alter_OV |  add_sub_decode.alter_CR0;
                 end
             EXEC_MUL:
                 begin
@@ -122,10 +118,8 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = mul_decode.alter_CR0;
-                    alter_CA  = 0;
-                    alter_OV  = mul_decode.alter_OV;
-                    read_CA   = 0;
+                    alter_xer  = mul_decode.alter_OV;
+                    read_xer   = mul_decode.alter_CR0;
                 end
             EXEC_DIV:
                 begin
@@ -135,10 +129,8 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = div_decode.alter_CR0;
-                    alter_CA  = 0;
-                    alter_OV  = div_decode.alter_OV;
-                    read_CA   = 0;
+                    alter_cer = div_decode.alter_OV;
+                    read_xer  = div_decode.alter_CR0;
                 end
             EXEC_COMPARE:
                 begin
@@ -148,10 +140,8 @@ module dispatcher#(
                     write_to_gpr = 0;
                     write_to_spr = 0;
                     write_to_cr = 1;
-                    alter_CR0 = 0;
-                    alter_CA  = 0;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer  = 0;
+                    read_xer   = 1;
                 end
             EXEC_TRAP:
                 begin
@@ -161,10 +151,8 @@ module dispatcher#(
                     write_to_gpr = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = 0;
-                    alter_CA  = 0;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer  = 0;
+                    read_xer   = 0;
                 end
             EXEC_LOGICAL:
                 begin
@@ -174,10 +162,8 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = log_decode.alter_CR0;
-                    alter_CA  = 0;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer  = 0;
+                    read_xer  = log_decode.alter_CR0;
                 end
             EXEC_ROTATE:
                 begin
@@ -187,10 +173,8 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = rot_decode.alter_CR0;
-                    alter_CA  = rot_decode.shift & ~rot_decode.left & rot_decode.sign_extend;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer = rot_decode.shift & ~rot_decode.left & rot_decode.sign_extend;
+                    read_xer  = rot_decode.alter_CR0;
                 end
             EXEC_SYSTEM:
                 begin
@@ -200,10 +184,8 @@ module dispatcher#(
                     write_to_gpr = (sys_decode.operation == SYS_MOVE_FROM_SPR) | (sys_decode.operation == SYS_MOVE_FROM_CR);
                     write_to_spr = sys_decode.operation == SYS_MOVE_TO_SPR;
                     write_to_cr = sys_decode.operation == SYS_MOVE_TO_CR;
-                    alter_CR0 = 0;
-                    alter_CA  = 0;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer  = 0;
+                    read_xer   = 0;
                 end
             default:
                 // Invalid instruction!
@@ -213,10 +195,8 @@ module dispatcher#(
                     write_to_gpr = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_CR0 = 0;
-                    alter_CA  = 0;
-                    alter_OV  = 0;
-                    read_CA   = 0;
+                    alter_xer  = 0;
+                    read_xer   = 0;
                     // TODo: Trap on invalid instructions
                 end
         endcase
