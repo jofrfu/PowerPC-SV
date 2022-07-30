@@ -490,7 +490,7 @@ module ppc_core (
 
     logic cmp_output_valid;
     logic cmp_output_ready;
-    logic cmp_rs_id;
+    logic[0:RS_ID_WIDTH-1] cmp_rs_id;
     logic[0:2] cmp_result_reg_addr;
     logic[0:3] cmp_result;
 

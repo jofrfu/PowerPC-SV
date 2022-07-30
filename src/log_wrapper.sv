@@ -38,7 +38,7 @@ module log_wrapper #(
     input log_decode_t control,
     input logic[0:31] xer,
     input logic xer_valid,
-    input logic xer_rs_id,
+    input logic[0:RS_ID_WIDTH-1] xer_rs_id,
 
     output logic[0:RS_ID_WIDTH-1] id_taken,
     //---------------------------------------------------------------
