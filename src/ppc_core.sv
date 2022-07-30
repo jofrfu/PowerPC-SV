@@ -28,7 +28,9 @@ module ppc_core (
     output logic top_output_valid,
     output logic[0:5] top_rs_id_out,
     output logic[0:4] top_result_reg_addr_out,
-    output logic[0:31] top_result_out
+    output logic[0:31] top_result_out,
+
+    output logic trap
 );
 
     localparam int RS_ID_WIDTH = 6;
@@ -534,6 +536,35 @@ module ppc_core (
         .result(cmp_result)
     );
 
+    trap_wrapper #(
+        .RS_OFFSET(48),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) TRAP (   
+        .input_valid(trap_valid),
+        .input_ready(trap_ready),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .control(trap_decode),
+
+        .id_taken(trap_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(),
+        .output_ready(1'b1),
+        .rs_id_out(),
+
+        .trap(trap)
+    );
+
     logic[0:4] sys_result_reg_addr;
     assign sys_result_reg_addr = (decode.fixed_point.system.operation == SYS_MOVE_FROM_CR | decode.fixed_point.system.operation == SYS_MOVE_FROM_CR) ? decode.fixed_point.control.result_reg_address :
                                   decode.fixed_point.system.operation == SYS_MOVE_TO_SPR ? decode.fixed_point.system.SPR : 0;
@@ -549,7 +580,7 @@ module ppc_core (
     end
 
     sys_wrapper #(
-        .RS_OFFSET(48),
+        .RS_OFFSET(56),
         .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) SYS (
