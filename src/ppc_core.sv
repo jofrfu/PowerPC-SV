@@ -488,6 +488,12 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[4])
     );
 
+    logic cmp_output_valid;
+    logic cmp_output_ready;
+    logic cmp_rs_id;
+    logic[0:2] cmp_result_reg_addr;
+    logic[0:3] cmp_result;
+
     cmp_wrapper #(
         .RS_OFFSET(40),
         .RS_DEPTH(8),
@@ -521,11 +527,11 @@ module ppc_core (
         .update_xer_so_rs_id_in(spr_write_rs_id),
         .update_xer_so_value_in(spr_write_value[0]),
 
-        .output_valid(),
-        .output_ready(),
-        .rs_id_out(),
-        .result_reg_addr_out(),
-        .result()
+        .output_valid(cmp_output_valid),
+        .output_ready(cmp_output_ready),
+        .rs_id_out(cmp_rs_id),
+        .result_reg_addr_out(cmp_result_reg_addr),
+        .result(cmp_result)
     );
 
     logic[0:4] sys_result_reg_addr;
@@ -660,6 +666,12 @@ module ppc_core (
         .cr_rs_id_in(arbiter_cr_rs_id),
         .cr_input_enable(arbiter_cr_enable),
         .cr_result_in(arbiter_cr_result),
+
+        .cmp_cr_input_valid(cmp_output_valid),
+        .cmp_cr_input_ready(cmp_output_ready),
+        .cmp_cr_rs_id_in(cmp_rs_id),
+        .cmp_cr_input_addr(cmp_result_reg_addr),
+        .cmp_cr_result_in(cmp_result),
 
         .cr_output_valid(cr_output_valid),
         .cr_rs_id_out(cr_write_rs_id),

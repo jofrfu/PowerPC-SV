@@ -129,7 +129,7 @@ module dispatcher#(
                     write_to_gpr = 1;
                     write_to_spr = 0;
                     write_to_cr = 0;
-                    alter_cer = div_decode.alter_OV;
+                    alter_xer = div_decode.alter_OV;
                     read_xer  = div_decode.alter_CR0;
                 end
             EXEC_COMPARE:
