@@ -59,6 +59,7 @@ module ppc_core (
     logic write_to_spr;
     logic write_to_cr;
     logic alter_xer;
+    logic alter_CR0;
     logic read_xer;
 
     logic add_sub_valid;
@@ -225,7 +226,7 @@ module ppc_core (
     assign gpr_target_rs_id = gpr_read_rs_id[2];
 
     assign gpr_update_addr = decode.fixed_point.control.result_reg_address;
-    assign gpr_update_enable = write_to_gpr;
+    assign gpr_update_enable = write_to_gpr & decode_valid & decode_ready;
     assign gpr_update_rs_id = id_taken;
 
     always_comb
@@ -255,9 +256,19 @@ module ppc_core (
     // SPR read bus signals. Address 1 refers to the XER.
     assign spr_read_addr = read_xer ? 1 : sys_decode.SPR;
     assign spr_update_addr = alter_xer ? 1 : sys_decode.SPR;
-    assign spr_update_enable = alter_xer | write_to_spr;
+    assign spr_update_enable = (alter_xer | write_to_spr) & decode_valid & decode_ready;
     assign spr_update_rs_id = id_taken;
 
+    // CR update bus assignments
+    assign cr_update_rs_id = id_taken;
+    for(genvar i = 0; i < 8; i++) begin
+        if(i == 0) begin
+            assign cr_update_enable[i] = (sys_decode.FXM[i] | decode.fixed_point.control.result_reg_address == i | alter_CR0) & write_to_cr & decode_valid & decode_ready;
+        end
+        else begin
+            assign cr_update_enable[i] = (sys_decode.FXM[i] | decode.fixed_point.control.result_reg_address == i) & write_to_cr & decode_valid & decode_ready;
+        end
+    end
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
     logic arbiter_valid[0:5];

@@ -28,6 +28,7 @@ module dispatcher#(
     output logic write_to_spr,
     output logic write_to_cr,
     output logic alter_xer,
+    output logic alter_CR0,
     output logic read_xer,
 
     // Output interfaces to each unit
@@ -108,6 +109,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = add_sub_decode.alter_OV | add_sub_decode.alter_CA;
+                    alter_CR0 = add_sub_decode.alter_CR0;
                     read_xer  = add_sub_decode.add_CA | add_sub_decode.alter_OV |  add_sub_decode.alter_CR0;
                 end
             EXEC_MUL:
@@ -119,6 +121,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = mul_decode.alter_OV;
+                    alter_CR0 = mul_decode.alter_CR0;
                     read_xer   = mul_decode.alter_CR0;
                 end
             EXEC_DIV:
@@ -130,6 +133,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = div_decode.alter_OV;
+                    alter_CR0 = div_decode.alter_CR0;
                     read_xer  = div_decode.alter_CR0;
                 end
             EXEC_COMPARE:
@@ -141,6 +145,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 1;
                     alter_xer  = 0;
+                    alter_CR0 = 0;
                     read_xer   = 1;
                 end
             EXEC_TRAP:
@@ -152,6 +157,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
+                    alter_CR0 = 0;
                     read_xer   = 0;
                 end
             EXEC_LOGICAL:
@@ -163,6 +169,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
+                    alter_CR0 = log_decode.alter_CR0;
                     read_xer  = log_decode.alter_CR0;
                 end
             EXEC_ROTATE:
@@ -174,6 +181,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = rot_decode.shift & ~rot_decode.left & rot_decode.sign_extend;
+                    alter_CR0 = rot_decode.alter_CR0;
                     read_xer  = rot_decode.alter_CR0;
                 end
             EXEC_SYSTEM:
@@ -185,6 +193,7 @@ module dispatcher#(
                     write_to_spr = sys_decode.operation == SYS_MOVE_TO_SPR;
                     write_to_cr = sys_decode.operation == SYS_MOVE_TO_CR;
                     alter_xer  = 0;
+                    alter_CR0 = 0;
                     read_xer   = 0;
                 end
             default:
@@ -196,6 +205,7 @@ module dispatcher#(
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
+                    alter_CR0 = 0;
                     read_xer   = 0;
                     // TODo: Trap on invalid instructions
                 end
