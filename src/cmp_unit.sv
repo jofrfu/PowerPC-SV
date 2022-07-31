@@ -115,10 +115,10 @@ module cmp_unit #(
                 valid_stages_ff[0]              <= input_valid;
                 rs_id_stages_ff[0]              <= rs_id_in;
                 result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
-                control_ff[0]                   <= control;
+                control_ff                      <= control;
                 
-                op1_ff[0]   <= op1;
-                op2_ff[0]   <= op2;
+                op1_ff      <= op1;
+                op2_ff      <= op2;
                 so_ff       <= xer_so;
             end
 

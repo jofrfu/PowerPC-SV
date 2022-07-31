@@ -82,7 +82,7 @@ module mul_unit #(
     assign result_all = $signed(op1_ff[1]) * $signed(op2_ff[1]);
     
     cond_exception_t cr0_xer_comb;
-    logic[0:65] result_comb;
+    logic[0:31] result_comb;
     
     always_comb
     begin

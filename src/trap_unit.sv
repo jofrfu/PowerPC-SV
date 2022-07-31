@@ -84,10 +84,10 @@ module trap_unit #(
             if(pipe_enable[0]) begin
                 valid_stages_ff[0]              <= input_valid;
                 rs_id_stages_ff[0]              <= rs_id_in;
-                control_ff[0]                   <= control;
+                control_ff                      <= control;
                 
-                op1_ff[0]   <= op1;
-                op2_ff[0]   <= op2;
+                op1_ff   <= op1;
+                op2_ff   <= op2;
             end
 
             if(pipe_enable[1]) begin

@@ -161,7 +161,7 @@ module write_back_arbiter #(
         found = 0;
         next = pointer_ff;
         for(int i = 0; i < ARBITER_DEPTH; i++) begin
-            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            logic[0:$clog2(ARBITER_DEPTH)-1] current = (pointer_ff + i) % ARBITER_DEPTH;
             if(gpr_input_valid[current] & ~found) begin
                 next = current;
                 found = 1;
@@ -172,7 +172,7 @@ module write_back_arbiter #(
         found = 0;
         next_without_xer = pointer_ff;
         for(int i = 0; i < ARBITER_DEPTH; i++) begin
-            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            logic[0:$clog2(ARBITER_DEPTH)-1] current = (pointer_ff + i) % ARBITER_DEPTH;
             if(gpr_input_valid[current] & ~gpr_cr0_xer_in[current].xer_valid & ~found) begin
                 next_without_xer = current;
                 found = 1;
@@ -183,7 +183,7 @@ module write_back_arbiter #(
         found = 0;
         next_without_cr0 = pointer_ff;
         for(int i = 0; i < ARBITER_DEPTH; i++) begin
-            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            logic[0:$clog2(ARBITER_DEPTH)-1] current = (pointer_ff + i) % ARBITER_DEPTH;
             if(gpr_input_valid[current] & ~gpr_cr0_xer_in[current].CR0_valid & ~found) begin
                 next_without_cr0 = current;
                 found = 1;
@@ -194,7 +194,7 @@ module write_back_arbiter #(
         found = 0;
         next_without_xer_and_cr0 = pointer_ff;
         for(int i = 0; i < ARBITER_DEPTH; i++) begin
-            logic current = (pointer_ff + i) % ARBITER_DEPTH;
+            logic[0:$clog2(ARBITER_DEPTH)-1] current = (pointer_ff + i) % ARBITER_DEPTH;
             if(gpr_input_valid[current] & ~gpr_cr0_xer_in[current].xer_valid & ~gpr_cr0_xer_in[current].CR0_valid & ~found) begin
                 next_without_xer_and_cr0 = current;
                 found = 1;

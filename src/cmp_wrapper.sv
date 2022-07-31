@@ -107,7 +107,7 @@ module cmp_wrapper #(
 
         .operand_valid({update_op_valid, update_op_valid, update_xer_so_valid}),
         .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in, update_xer_so_rs_id_in}),
-        .update_op_value_in({update_op_value_in, update_op_value_in, update_xer_so_value_in}),
+        .update_op_value_in({update_op_value_in, update_op_value_in, {update_xer_so_value_in, 31'b0}}),
     
         .output_valid(rs_output_valid),
         .output_ready(rs_output_ready),

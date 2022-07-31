@@ -113,9 +113,6 @@ module add_sub_unit #(
         if(control_stages_ff[2].alter_CA) begin
             cr0_xer_comb.xer[2] = carry[0]; // Carry sits at bit 2
         end
-        else begin
-            cr0_xer_comb.xer[2] = xer_ff[2];
-        end
 
         if(control_stages_ff[2].alter_OV) begin
             cr0_xer_comb.xer[1] = carry[0] ^ carry[1]; // Overflow sits at bit 1

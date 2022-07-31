@@ -43,7 +43,7 @@ module log_unit #(
     logic valid_stages_ff[0:2];
     logic[0:RS_ID_WIDTH-1] rs_id_stages_ff[0:2];
     logic[0:4] result_reg_addr_stages_ff[0:2];
-    add_sub_decode_t control_stages_ff[0:1];
+    log_decode_t control_stages_ff[0:1];
 
     logic so_ff[0:1];
     
@@ -84,7 +84,7 @@ module log_unit #(
 
     always_comb
     begin
-        case(control_stages_ff[1])
+        case(control_stages_ff[1].operation)
             LOG_AND:
                 result_comb = and_ff;
             LOG_OR:
