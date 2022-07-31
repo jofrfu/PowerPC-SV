@@ -84,6 +84,8 @@ module cmp_unit #(
     end
 
     logic pipe_enable[0:1];
+
+    `declare_or_reduce(2)
     
     always_comb
     begin
@@ -91,7 +93,7 @@ module cmp_unit #(
         pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
              
         // If data can move in the pipeline, we can still take input data
-        input_ready = Reduction#(2)::or_reduce(pipe_enable);
+        input_ready = or_reduce(pipe_enable);
     end
 
     always_ff @(posedge clk)

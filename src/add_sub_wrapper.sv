@@ -68,7 +68,7 @@ module add_sub_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         add_sub_decode_t add_sub;
         logic[0:4] result_reg_addr;
     } control_t;

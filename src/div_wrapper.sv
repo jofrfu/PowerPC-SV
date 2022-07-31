@@ -68,7 +68,7 @@ module div_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         div_decode_t div;
         logic[0:4] result_reg_addr;
     } control_t;

@@ -67,7 +67,7 @@ module cmp_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         cmp_decode_t cmp;
         logic[0:2] result_reg_addr;
     } control_t;

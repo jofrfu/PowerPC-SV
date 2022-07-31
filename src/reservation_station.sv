@@ -22,7 +22,7 @@ module reservation_station #(
     parameter int RS_OFFSET = 0,    // The address offset of these particular reservation stations
     parameter int RS_DEPTH = 8,     // Describes the number of reservation station for one unit
     parameter int RS_ID_WIDTH = 5,  // The bit width of the ID (or address) of all reservations stations in the system
-    parameter type CONTROL_TYPE// = add_sub_decode_t  // The control type for the unit
+    parameter type CONTROL_TYPE = add_sub_decode_t  // The control type for the unit
 )(
     input logic clk,
     input logic rst,
@@ -56,12 +56,12 @@ module reservation_station #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         logic valid;
         CONTROL_TYPE control;
-        logic op_value_valid[0:OPERANDS-1];
-        logic[0:RS_ID_WIDTH-1] op_rs_id[0:OPERANDS-1];
-        logic[0:OPERAND_WIDTH-1] op_value[0:OPERANDS-1];
+        logic[0:OPERANDS-1] op_value_valid;
+        logic[0:OPERANDS-1][0:RS_ID_WIDTH-1] op_rs_id;
+        logic[0:OPERANDS-1][0:OPERAND_WIDTH-1] op_value;
     } station_t;
 
     // Storage of reservation stations of a specific unit
@@ -97,7 +97,7 @@ module reservation_station #(
         can_dispatch = 0;
         id_dispatch = RS_OFFSET;
         for(int i = RS_DEPTH-1; i >= 0; i--) begin            
-            if(Reduction#(OPERANDS)::and_reduce(reservation_stations_ff[i].op_value_valid) & reservation_stations_ff[i].valid) begin
+            if(&reservation_stations_ff[i].op_value_valid & reservation_stations_ff[i].valid) begin
                 can_dispatch = 1;
                 id_dispatch = i + RS_OFFSET;
             end
@@ -105,7 +105,9 @@ module reservation_station #(
     end
     
     assign output_valid = can_dispatch;
-    assign op_value_out = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value;
+    for(genvar i = 0; i < OPERANDS; i++) begin
+        assign op_value_out[i] = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value[i];
+    end
     assign control_out  = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
     assign op_rs_id_out = id_dispatch;
     //------------------------------------
@@ -131,8 +133,8 @@ module reservation_station #(
                         reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= op_value_valid_in[i];
                         reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= op_value_in[i];
                     end
+                    reservation_stations_ff[id_take - RS_OFFSET].op_rs_id[i] <= op_rs_id_in[i];
                 end
-                reservation_stations_ff[id_take - RS_OFFSET].op_rs_id <= op_rs_id_in;
             end
             
             // Reset the entry, if it was dispatched

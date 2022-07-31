@@ -68,7 +68,7 @@ module mul_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         mul_decode_t mul;
         logic[0:4] result_reg_addr;
     } control_t;

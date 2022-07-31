@@ -125,6 +125,7 @@ module rot_unit #(
 
     always_comb
     begin
+        logic[0:31] sign = {32{op1_ff[2][0]}};
 
         cr0_xer_comb.xer = xer_ff[2];
 
@@ -133,7 +134,6 @@ module rot_unit #(
             cr0_xer_comb.xer_valid = 0;
         end
         else if(control_stages_ff[2].shift & ~control_stages_ff[2].left & control_stages_ff[2].sign_extend) begin
-            logic[0:31] sign = {32{op1_ff[2][0]}};
             result_comb = (shifted_ff & mask_ff) | (sign & ~mask_ff);
             cr0_xer_comb.xer[2] = sign & ((shifted_ff & ~mask_ff) != 0);
             cr0_xer_comb.xer_valid = 1;
@@ -148,6 +148,8 @@ module rot_unit #(
     end
 
     logic pipe_enable[0:3];
+
+    `declare_or_reduce(4)
     
     always_comb
     begin
@@ -157,7 +159,7 @@ module rot_unit #(
         pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
              
         // If data can move in the pipeline, we can still take input data
-        input_ready = Reduction#(4)::or_reduce(pipe_enable);
+        input_ready = or_reduce(pipe_enable);
     end
 
     always_ff @(posedge clk)

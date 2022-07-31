@@ -14,6 +14,8 @@
     limitations under the License.
 ==============================================================================*/
 
+`define PPC_TYPES
+
 package ppc_types;
 
     // ------ Types for instruction formats START ------
@@ -531,7 +533,7 @@ package ppc_types;
     // ------ Types for floating point processor END ------
     
     
-    typedef struct {
+    typedef struct packed {
         branch_decode_t branch;
         fixed_point_decode_t fixed_point;
         //floating_point_decode_t floating_point;
@@ -573,7 +575,7 @@ package ppc_types;
     
     // ------ Types for fixed point units START ------
     // Used to set bits in CR0 and XER
-    typedef struct {
+    typedef struct packed {
         // XER
         logic xer_valid;
         logic[0:31] xer;
@@ -583,6 +585,17 @@ package ppc_types;
     } cond_exception_t;
     // ------ Types for fixed point units END ------
     
+
+`define declare_or_reduce(WIDTH)    \
+    function logic or_reduce(input logic x[0:WIDTH-1]); \
+        logic res = x[0];                               \
+        for(int i = 1; i < WIDTH; i++) begin            \
+            res |= x[i];                                \
+        end                                             \
+        return res;                                     \
+    endfunction
+
+    /*
     virtual class Reduction #(parameter WIDTH=32);
         static function logic or_reduce(input logic x[0:WIDTH-1]);
             logic res = x[0];
@@ -600,4 +613,5 @@ package ppc_types;
             return res;
         endfunction
     endclass
+    */
 endpackage

@@ -14,6 +14,8 @@
     limitations under the License.
 ==============================================================================*/
 
+`include "ppc_types.sv"
+
 import ppc_types::*;
 
 module ppc_core (
@@ -165,7 +167,7 @@ module ppc_core (
         .clk(clk),
         .rst(rst),
 
-        .read_addr({spr_read_addr}),
+        .read_addr('{spr_read_addr}),
         .read_value_valid('{spr_read_value_valid}),
         .read_value('{spr_read_value}),
         .read_rs_id('{spr_read_rs_id}),

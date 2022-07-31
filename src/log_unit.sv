@@ -114,6 +114,8 @@ module log_unit #(
 
     logic pipe_enable[0:2];
 
+    `declare_or_reduce(3)
+
     always_comb
     begin
         pipe_enable[2] = (~valid_stages_ff[2] & valid_stages_ff[1]) | (output_ready & valid_stages_ff[2]);
@@ -121,7 +123,7 @@ module log_unit #(
         pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
              
         // If data can move in the pipeline, we can still take input data
-        input_ready = Reduction#(3)::or_reduce(pipe_enable);
+        input_ready = or_reduce(pipe_enable);
     end
 
     always_ff @(posedge clk)
@@ -194,8 +196,8 @@ module log_unit #(
                 result  <= result_comb;
                 cr0_xer.CR0_valid <= control_stages_ff[1].alter_CR0;
                 cr0_xer.so <= so_ff[1];
-                cr0_xer.xer = 0;
-                cr0_xer.xer_valid = 0;
+                cr0_xer.xer <= 0;
+                cr0_xer.xer_valid <= 0;
             end
         end
     end

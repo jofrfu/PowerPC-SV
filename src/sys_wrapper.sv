@@ -92,7 +92,7 @@ module sys_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         system_decode_t sys;
         logic[0:4] result_reg_addr;
     } control_t;
@@ -158,16 +158,16 @@ module sys_wrapper #(
         .take_valid(input_valid & (control.operation == SYS_MOVE_TO_SPR | control.operation == SYS_MOVE_TO_CR)),
         .take_ready(gpr_input_ready),
 
-        .op_value_valid_in({gpr_op_valid}),
-        .op_rs_id_in({gpr_op_rs_id}),
-        .op_value_in({gpr_op}),
+        .op_value_valid_in('{gpr_op_valid}),
+        .op_rs_id_in('{gpr_op_rs_id}),
+        .op_value_in('{gpr_op}),
         .control_in(rs_control_in),
 
         .id_taken(gpr_id_taken),
 
-        .operand_valid({update_gpr_op_valid}),
-        .update_op_rs_id_in({update_gpr_op_rs_id_in}),
-        .update_op_value_in({update_gpr_op_value_in}),
+        .operand_valid('{update_gpr_op_valid}),
+        .update_op_rs_id_in('{update_gpr_op_rs_id_in}),
+        .update_op_value_in('{update_gpr_op_value_in}),
     
         .output_valid(rs_gpr_valid),
         .output_ready(rs_gpr_ready),
@@ -190,16 +190,16 @@ module sys_wrapper #(
         .take_valid(input_valid & (control.operation == SYS_MOVE_FROM_SPR)),
         .take_ready(spr_input_ready),
 
-        .op_value_valid_in({spr_op_valid}),
-        .op_rs_id_in({spr_op_rs_id}),
-        .op_value_in({spr_op}),
+        .op_value_valid_in('{spr_op_valid}),
+        .op_rs_id_in('{spr_op_rs_id}),
+        .op_value_in('{spr_op}),
         .control_in(rs_control_in),
 
         .id_taken(spr_id_taken),
 
-        .operand_valid({update_spr_op_valid}),
-        .update_op_rs_id_in({update_spr_op_rs_id_in}),
-        .update_op_value_in({update_spr_op_value_in}),
+        .operand_valid('{update_spr_op_valid}),
+        .update_op_rs_id_in('{update_spr_op_rs_id_in}),
+        .update_op_value_in('{update_spr_op_value_in}),
     
         .output_valid(rs_spr_valid),
         .output_ready(rs_spr_ready),

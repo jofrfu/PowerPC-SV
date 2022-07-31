@@ -110,7 +110,7 @@ module write_back_arbiter #(
         end
     endfunction
 
-    typedef struct {
+    typedef struct packed {
         logic gpr_spr;
         logic gpr_cr;
         logic gpr_cmp;

@@ -68,7 +68,7 @@ module log_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         log_decode_t log;
         logic[0:4] result_reg_addr;
     } control_t;

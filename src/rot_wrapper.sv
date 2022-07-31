@@ -71,7 +71,7 @@ module rot_wrapper #(
     //-----------------------------------------------------
 );
 
-    typedef struct {
+    typedef struct packed {
         rotate_decode_t rot;
         logic[0:4] result_reg_addr;
     } control_t;
