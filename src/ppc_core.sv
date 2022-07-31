@@ -541,6 +541,9 @@ module ppc_core (
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) TRAP (   
+        .clk(clk),
+        .rst(rst),
+
         .input_valid(trap_valid),
         .input_ready(trap_ready),
 

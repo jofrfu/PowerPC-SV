@@ -22,7 +22,7 @@ module reservation_station #(
     parameter int RS_OFFSET = 0,    // The address offset of these particular reservation stations
     parameter int RS_DEPTH = 8,     // Describes the number of reservation station for one unit
     parameter int RS_ID_WIDTH = 5,  // The bit width of the ID (or address) of all reservations stations in the system
-    parameter type CONTROL_TYPE = add_sub_decode_t  // The control type for the unit
+    parameter type CONTROL_TYPE// = add_sub_decode_t  // The control type for the unit
 )(
     input logic clk,
     input logic rst,
