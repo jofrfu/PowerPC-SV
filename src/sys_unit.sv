@@ -77,6 +77,8 @@ module sys_unit #(
     logic[0:31] spr_result_comb;
     logic[0:31] cr_result_comb;
 
+    logic output_valid, output_ready;
+
     always_comb
     begin
         gpr_output_valid_comb = 0;
@@ -87,31 +89,49 @@ module sys_unit #(
         gpr_result_comb = op1_ff;
         cr_result_comb = op1_ff;
 
-
+        
         case(control_stages_ff[0].operation)
             SYS_MOVE_TO_SPR:
                 begin
                     spr_output_valid_comb = valid_stages_ff;
+                    output_ready = spr_output_ready;
                 end
             SYS_MOVE_FROM_SPR:
                 begin
                     gpr_output_valid_comb = valid_stages_ff;
+                    output_ready = gpr_output_ready;
                 end
             SYS_MOVE_TO_CR:
                 begin
                     cr_output_valid_comb = valid_stages_ff;
+                    output_ready = cr_output_ready;
                 end
             SYS_MOVE_FROM_CR:
                 begin
                     gpr_output_valid_comb = valid_stages_ff;
+                    output_ready = gpr_output_ready;
                 end
             default:
                 begin
                     gpr_output_valid_comb = 0;
                     spr_output_valid_comb = 0;
                     cr_output_valid_comb = 0;
+                    output_ready = 0;
                 end
         endcase
+    end
+
+    logic pipe_enable[0:1];
+
+    `declare_or_reduce(2)
+
+    always_comb
+    begin
+        pipe_enable[1] = (~output_valid & valid_stages_ff) | (output_ready & valid_stages_ff);
+        pipe_enable[0] = (~valid_stages_ff & input_valid) | (pipe_enable[1] & valid_stages_ff);
+
+        // If data can move in the pipeline, we can still take input data
+        input_ready = or_reduce(pipe_enable);
     end
 
     always_ff @(posedge clk)
@@ -123,23 +143,28 @@ module sys_unit #(
             control_stages_ff           <= '{default: '{default: '0}};
         end
         else begin
-            valid_stages_ff                 <= input_valid;
-            rs_id_stages_ff[0]              <= rs_id_in;
-            result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
-            control_stages_ff[0]            <= control;
-            
-            op1_ff      <= op1;
+            if(pipe_enable[0]) begin
+                valid_stages_ff                 <= input_valid;
+                rs_id_stages_ff[0]              <= rs_id_in;
+                result_reg_addr_stages_ff[0]    <= result_reg_addr_in;
+                control_stages_ff[0]            <= control;
+                
+                op1_ff      <= op1;
+            end
 
-            gpr_output_valid                <= gpr_output_valid_comb;
-            spr_output_valid                <= spr_output_valid_comb;
-            cr_output_valid                 <= cr_output_valid_comb;
-            rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
-            result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
-            control_stages_ff[1]            <= control_stages_ff[0];
+            if(pipe_enable[1]) begin
+                output_valid                    <= valid_stages_ff;
+                gpr_output_valid                <= gpr_output_valid_comb;
+                spr_output_valid                <= spr_output_valid_comb;
+                cr_output_valid                 <= cr_output_valid_comb;
+                rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
+                result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
+                control_stages_ff[1]            <= control_stages_ff[0];
 
-            gpr_result                      <= gpr_result_comb;
-            spr_result                      <= spr_result_comb;
-            cr_result                       <= cr_result_comb;
+                gpr_result                      <= gpr_result_comb;
+                spr_result                      <= spr_result_comb;
+                cr_result                       <= cr_result_comb;
+            end
         end
     end
     
