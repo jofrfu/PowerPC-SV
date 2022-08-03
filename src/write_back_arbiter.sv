@@ -631,6 +631,9 @@ module write_back_arbiter #(
         cr_output_enable_comb = '{default: '0};
         cr_result_out_comb = 0;
 
+        pointer = 0;
+
+
         if(en_next) begin
             gpr_input_ready[next] = 1;
 
