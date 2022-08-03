@@ -648,6 +648,8 @@ module write_back_arbiter #(
             cr_rs_id_out_comb[0] = gpr_rs_id_in[next];
             cr_output_enable_comb[0] = gpr_cr0_xer_in[next].CR0_valid;
             cr_result_out_comb[0:3] = check_condition(gpr_result_in[next], gpr_cr0_xer_in[next].so);
+
+            pointer = next;
         end
         else if(en_next_without_spr) begin
             gpr_input_ready[next_without_xer] = 1;
@@ -666,6 +668,8 @@ module write_back_arbiter #(
             cr_rs_id_out_comb[0] = gpr_rs_id_in[next_without_xer];
             cr_output_enable_comb[0] = gpr_cr0_xer_in[next_without_xer].CR0_valid;
             cr_result_out_comb[0:3] = check_condition(gpr_result_in[next_without_xer], gpr_cr0_xer_in[next_without_xer].so);
+
+            pointer = next_without_xer;
         end
         else if(en_next_without_cr) begin
             gpr_input_ready[next_without_cr0] = 1;
@@ -684,6 +688,8 @@ module write_back_arbiter #(
             cr_rs_id_out_comb[0] = gpr_rs_id_in[next_without_cr0];
             cr_output_enable_comb[0] = gpr_cr0_xer_in[next_without_cr0].CR0_valid;
             cr_result_out_comb[0:3] = check_condition(gpr_result_in[next_without_cr0], gpr_cr0_xer_in[next_without_cr0].so);
+
+            pointer = next_without_cr0;
         end
         else if(en_next_without_spr_and_cr) begin
             gpr_input_ready[next_without_xer_and_cr0] = 1;
@@ -702,6 +708,8 @@ module write_back_arbiter #(
             cr_rs_id_out_comb[0] = gpr_rs_id_in[next_without_xer_and_cr0];
             cr_output_enable_comb[0] = gpr_cr0_xer_in[next_without_xer_and_cr0].CR0_valid;
             cr_result_out_comb[0:3] = check_condition(gpr_result_in[next_without_xer_and_cr0], gpr_cr0_xer_in[next_without_xer_and_cr0].so);
+
+            pointer = next_without_xer_and_cr0;
         end
 
         if(en_spr) begin
