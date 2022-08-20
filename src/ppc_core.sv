@@ -678,7 +678,7 @@ module ppc_core (
                               cr_output_enable[6] & cr_output_valid,
                               cr_output_enable[7] & cr_output_valid};
 
-    write_back_arbiter #(
+    simple_write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
         .ARBITER_DEPTH(6)
     ) ARBITER (
