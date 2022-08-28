@@ -70,7 +70,7 @@ module simple_write_back_arbiter #(
     output logic[0:31] cr_result_out
 );
 
-    typedef struct {
+    typedef struct packed {
         logic gpr_output_valid;
         logic[0:RS_ID_WIDTH-1] gpr_rs_id_out;
         logic[0:4] gpr_result_reg_addr_out;
@@ -83,8 +83,8 @@ module simple_write_back_arbiter #(
         logic[0:31] spr_result_out;
 
         logic cr_output_valid;
-        logic[0:RS_ID_WIDTH-1] cr_rs_id_out[0:7];
-        logic cr_output_enable[0:7];
+        logic[0:7][0:RS_ID_WIDTH-1] cr_rs_id_out;
+        logic[0:7] cr_output_enable;
         logic[0:31] cr_result_out;
     } busses;
 
@@ -98,8 +98,8 @@ module simple_write_back_arbiter #(
     logic spr_chosen, spr_chosen_ff;
 
     logic cr_output_valid_comb, cr_output_valid_ff;
-    logic[0:RS_ID_WIDTH-1] cr_rs_id_out_comb[0:7], cr_rs_id_out_ff[0:7];
-    logic cr_output_enable_comb[0:7], cr_output_enable_ff[0:7];
+    logic[0:7][0:RS_ID_WIDTH-1] cr_rs_id_out_comb, cr_rs_id_out_ff;
+    logic[0:7] cr_output_enable_comb, cr_output_enable_ff;
     logic[0:31] cr_result_out_comb, cr_result_out_ff;
 
     logic cr_chosen, cr_chosen_ff;
@@ -169,8 +169,10 @@ module simple_write_back_arbiter #(
             cmp_cr_input_ready = 1'b0;
 
             cr_output_valid_comb = cr_input_valid;
-            cr_rs_id_out_comb = '{default: cr_rs_id_in};
-            cr_output_enable_comb = cr_input_enable;
+            for(int i = 0; i < 8; i++) begin
+                cr_rs_id_out_comb[i] = cr_rs_id_in;
+                cr_output_enable_comb[i] = cr_input_enable[i];
+            end
             cr_result_out_comb = cr_result_in;
             
             cr_pointer = 1'b1;
@@ -180,8 +182,10 @@ module simple_write_back_arbiter #(
             cmp_cr_input_ready = cr_enable;
 
             cr_output_valid_comb = cmp_cr_input_valid;
-            cr_rs_id_out_comb = '{default: cmp_cr_rs_id_in};
-            cr_output_enable_comb = '{default: '0};
+            for(int i = 0; i < 8; i++) begin
+                cr_rs_id_out_comb[i] = cmp_cr_rs_id_in;
+            end
+            cr_output_enable_comb = 8'b0;
             cr_output_enable_comb[cmp_cr_input_addr] = 1'b1;
             cr_result_out_comb = cmp_cr_result_in;
 
@@ -377,8 +381,10 @@ module simple_write_back_arbiter #(
             cr_chosen_ff <= cr_chosen;
 
             cr_output_valid <= output_bus_comb.cr_output_valid;
-            cr_rs_id_out <= output_bus_comb.cr_rs_id_out;
-            cr_output_enable <= output_bus_comb.cr_output_enable;
+            for(int i = 0; i < 8; i++) begin
+                cr_rs_id_out[i] <= output_bus_comb.cr_rs_id_out[i];
+                cr_output_enable[i] <= output_bus_comb.cr_output_enable[i];
+            end
             cr_result_out <= output_bus_comb.cr_result_out;
         end
     end
