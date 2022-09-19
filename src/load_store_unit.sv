@@ -17,8 +17,7 @@
 import ppc_types::*;
 
 module load_store_unit #(
-    parameter int RS_ID_WIDTH = 5,
-    parameter int DATA_MEM_READ_LATENCY = 2
+    parameter int RS_ID_WIDTH = 5
 )(
     input logic clk,
     input logic rst,
@@ -43,13 +42,18 @@ module load_store_unit #(
     output cond_exception_t cr0_xer,
 
     // Interface to data cache or memory
-    output  logic[0:31] mem_address,
-    output  logic[0:3]  mem_write_en,
-    output  logic[0:31] mem_write_data,
-    output  logic[0:3]  mem_read_en,
-    input   logic[0:31] mem_read_data,
-    input   logic       mem_read_data_valid,
-    input   logic       mem_busy
+    output logic to_mem_valid,
+    input  logic to_mem_ready,
+    output logic[0:31] mem_address,
+    output logic[0:3]  mem_write_en,
+    output logic[0:31] mem_write_data,
+    output logic[0:3]  mem_read_en,
+
+    input  logic from_mem_valid,
+    output logic from_mem_ready,
+    input  logic[0:31] mem_read_data,
+    input  logic       mem_read_data_valid
+    //
 );
     logic valid_stages_ff[0:2 + DATA_MEM_READ_LATENCY];
     logic[0:RS_ID_WIDTH-1] rs_id_stages_ff[0:2 + DATA_MEM_READ_LATENCY];
@@ -126,10 +130,6 @@ module load_store_unit #(
 
 
 
-    logic[0:31] mem_read_data
-
-
-
     always_ff @(posedge clk) 
     begin
         if(rst) begin
@@ -170,34 +170,6 @@ module load_store_unit #(
                 effective_address_ff    <= effective_address_comb;
                 wen_ff                  <= wen_comb;
                 write_data_ff           <= write_data_comb;
-            end
-
-            for(int i = 0; i < DATA_MEM_READ_LATENCY; i++) begin
-                if(pipe_enable[2 + i]) begin
-                    valid_stages_ff[2 + i]              <= valid_stages_ff[1 + i];
-                    rs_id_stages_ff[2 + i]              <= rs_id_stages_ff[1 + i];
-                    result_reg_addr_stages_ff[2 + i]    <= result_reg_addr_stages_ff[1 + i];
-                    control_stages_ff[2 + i]            <= control_stages_ff[1 + i];
-                    store_ff[2 + i]                     <= store_ff[1 + i];
-                end
-            end
-
-            if(pipe_enable[2 + DATA_MEM_READ_LATENCY]) begin
-                valid_stages_ff[2 + DATA_MEM_READ_LATENCY]              <= valid_stages_ff[1 + DATA_MEM_READ_LATENCY];
-                rs_id_stages_ff[2 + DATA_MEM_READ_LATENCY]              <= rs_id_stages_ff[1 + DATA_MEM_READ_LATENCY];
-                result_reg_addr_stages_ff[2 + DATA_MEM_READ_LATENCY]    <= result_reg_addr_stages_ff[1 + DATA_MEM_READ_LATENCY];
-
-                if(control_stages_ff[1 + DATA_MEM_READ_LATENCY].sign_extend) begin
-                    case(control_stages_ff[1 + DATA_MEM_READ_LATENCY].word_size)
-                        0:  result <= {24{mem_read_data[24]}, mem_read_data[24:31]};
-                        1:  result <= {16{mem_read_data[16]}, mem_read_data[16:31]};
-                        2:  result <= mem_read_data;    // This case shouldn't happen!
-                        3:  result <= mem_read_data;
-                    endcase
-                end
-                else begin
-                    result <= mem_read_data;
-                end
             end
         end    
     end
