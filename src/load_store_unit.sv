@@ -39,27 +39,31 @@ module load_store_unit #(
     output logic[0:4] result_reg_addr_out,
     
     output logic[0:31] result,
-    output cond_exception_t cr0_xer,
 
     // Interface to data cache or memory
     output logic to_mem_valid,
     input  logic to_mem_ready,
+    output logic[0:RS_ID_WIDTH-1] to_mem_rs_id,
+    output logic[0:4] to_mem_reg_addr,
+
     output logic[0:31] mem_address,
     output logic[0:3]  mem_write_en,
     output logic[0:31] mem_write_data,
     output logic[0:3]  mem_read_en,
 
+    // Interface from data cache or memory
     input  logic from_mem_valid,
     output logic from_mem_ready,
-    input  logic[0:31] mem_read_data,
-    input  logic       mem_read_data_valid
-    //
+    input  logic[0:RS_ID_WIDTH-1] from_mem_rs_id,
+    input  logic[0:4] from_mem_reg_addr,
+
+    input  logic[0:31] mem_read_data
 );
-    logic valid_stages_ff[0:2 + DATA_MEM_READ_LATENCY];
-    logic[0:RS_ID_WIDTH-1] rs_id_stages_ff[0:2 + DATA_MEM_READ_LATENCY];
-    logic[0:4] result_reg_addr_stages_ff[0:2 + DATA_MEM_READ_LATENCY];
-    load_store_decode_t control_stages_ff[0:1 + DATA_MEM_READ_LATENCY];
-    logic store_ff[0:1 + DATA_MEM_READ_LATENCY];
+    logic valid_stages_ff[0:1];
+    logic[0:RS_ID_WIDTH-1] rs_id_stages_ff[0:1];
+    logic[0:4] result_reg_addr_stages_ff[0:1];
+    load_store_decode_t control_stages_ff[0:1];
+    logic store_ff[0:1];
 
 
     logic[0:31] op1_ff, op2_ff, source_ff;
@@ -120,15 +124,36 @@ module load_store_unit #(
 
     assign effective_address_comb = op1_ff + op2_ff;
 
+    assign to_mem_valid     = valid_stages_ff[1];
+    assign to_mem_rs_id     = rs_id_stages_ff[1];
+    assign to_mem_reg_addr  = result_reg_addr_stages_ff[1];
+
     assign mem_address      = effective_address_ff;
     assign mem_write_en     = wen_ff & {4{store_ff[1]}};
     assign mem_read_en      = wen_ff & {4{~store_ff[1]}};
     assign mem_write_data   = write_data_ff;
 
 
-    logic pipe_enable[0:4];
+
+    assign output_valid         = from_mem_valid;
+    assign from_mem_ready       = output_ready;
+    assign rs_id_out            = from_mem_rs_id;
+    assign result_reg_addr_out  = from_mem_reg_addr;
+    assign result               = mem_read_data;
 
 
+    logic pipe_enable[0:1];
+
+    `declare_or_reduce(2)
+
+    always_comb
+    begin
+        pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (to_mem_ready & valid_stages_ff[1]);
+        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
+             
+        // If data can move in the pipeline, we can still take input data
+        input_ready = or_reduce(pipe_enable);
+    end
 
     always_ff @(posedge clk) 
     begin
