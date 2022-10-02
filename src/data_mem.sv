@@ -45,96 +45,127 @@ module data_mem #(
     output logic[0:31] mem_read_data
 );
 
-    typedef enum {IDLE, READ_SINGLE, READ_MULTIPLE, WRITE_SINGLE, WRITE_MULTIPLE} state_t;
+    typedef enum {IDLE, READ_MULTIPLE, WRITE_MULTIPLE} state_t;
 
-    state_t state_ff;
-
-    logic[0:$clog2(MEMORY_DEPTH)-1] address_ff;
+    state_t state, state_ff;
 
     // write state registers
-    logic[0:3] w_mask_part0_ff, w_mask_part1_ff;
-    logic[0:31] w_word_part0_ff, w_word_part1_ff;
+    logic[0:3] w_mask_part0, w_mask_part1, w_mask_part1_ff;
+    logic[0:31] w_word_part0, w_word_part1, w_word_part1_ff;
 
     // read state registers
     logic[0:3] r_mask_part0_ff, r_mask_part1_ff;
     logic[0:31] r_word_part0_ff, r_word_part1_ff;
 
+    logic[0:$clog2(MEMORY_DEPTH)-1] address, address_part1, address_part1_ff;
+
+
+    always_comb
+    begin
+        case(state_ff)
+            IDLE:
+                begin
+                    if(input_valid) begin
+                        input_ready = 1'b1;
+                        address = mem_address[0:29];
+                        address_part1 = mem_address[0:29] + 1;
+                        if(|mem_write_en) begin
+                            case(mem_address[30:31])
+                                2'b00:
+                                    begin
+                                        state = IDLE;
+                                        w_mask_part0 = mem_write_en;
+                                        w_word_part0 = mem_write_data;
+                                        w_mask_part1 = 0;
+                                        w_word_part1 = 0;
+                                    end
+                                2'b01:
+                                    begin
+                                        w_mask_part0 = {1'b0, mem_write_en[0:2]};
+                                        w_word_part0 = {8'b0, mem_write_data[0:23]};
+                                        w_mask_part1 = {mem_write_en[3], 3'b0};
+                                        w_word_part1 = {mem_write_data[24:31], 24'b0};
+                                        if(mem_write_en[3]) begin
+                                            state = WRITE_MULTIPLE;
+                                        end
+                                        else begin
+                                            state = IDLE;
+                                        end
+                                    end
+                                2'b10:
+                                    begin
+                                        w_mask_part0 = {2'b0, mem_write_en[0:1]};
+                                        w_word_part0 = {16'b0, mem_write_data[0:15]};
+                                        w_mask_part1 = {mem_write_en[2:3], 2'b0};
+                                        w_word_part1 = {mem_write_data[16:31], 16'b0};
+                                        if(|mem_write_en[2:3]) begin
+                                            state = WRITE_MULTIPLE;
+                                        end
+                                        else begin
+                                            state = IDLE;
+                                        end
+                                    end
+                                2'b11:
+                                    begin
+                                        w_mask_part0 = {3'b0, mem_write_en[0]};
+                                        w_word_part0 = {24'b0, mem_write_data[0:7]};
+                                        w_mask_part1 = {mem_write_en[1:3], 3'b0};
+                                        w_word_part1 = {mem_write_data[8:31], 8'b0};
+                                        if(|mem_write_en[1:3]) begin
+                                            state = WRITE_MULTIPLE;
+                                        end
+                                        else begin
+                                            state = IDLE;
+                                        end
+                                    end
+                            endcase
+                        end
+                        else if(|mem_read_en) begin
+                            input_ready = 1'b1;
+                        end
+                        else begin
+                            input_ready = 1'b0;
+                        end
+                    end
+                end
+            READ_MULTIPLE:
+                begin
+                    input_ready = 1'b0;
+                end
+            WRITE_MULTIPLE:
+                begin
+                    input_ready = 1'b0;
+
+                    w_mask_part0 = w_mask_part1_ff;
+                    w_word_part0 = w_word_part1_ff;
+                    w_mask_part1 = 0;
+                    w_word_part1 = 0;
+                    address = address_part1_ff;
+                    address_part1 = 0;
+
+                    state = IDLE;
+                end
+        endcase
+    end
+
+
+
+
+
 
     always_ff @(posedge clk)
     begin
         if(rst) begin
-            state_ff = IDLE;
-            input_ready = 1'b0;
-            address_ff = 0;
-            w_mask_part0_ff = 0;
-            w_mask_part1_ff = 0;
-            w_word_part0_ff = 0;
-            w_word_part1_ff = 0;
-            r_mask_part0_ff = 0;
-            r_mask_part1_ff = 0;
-            r_word_part0_ff = 0;
-            r_word_part1_ff = 0;
+            state_ff <= IDLE;
+            address_part1_ff <= 0;
+            w_mask_part1_ff <= 0;
+            w_word_part1_ff <= 0;
         end
         else begin
-            case(state_ff)
-                IDLE:
-                    begin
-                        if(input_valid) begin
-                            input_ready = 1'b1;
-                            address_ff = mem_address[0:29];
-                            if(|mem_write_en) begin
-                                case(mem_address[30:31])
-                                    2'b00:
-                                        begin
-                                            state_ff = WRITE_SINGLE;
-                                            w_mask_part0_ff = mem_write_en;
-                                            w_word_part0_ff = mem_write_data;
-                                            w_mask_part1_ff = 4'b0;
-                                            w_word_part1_ff = 32'b0;
-                                        end
-                                    2'b01:
-                                        begin
-                                            if(mem_write_en[3]) begin
-                                                state_ff = WRITE_MULTIPLE;
-                                                w_mask_part0_ff = {1'b0, mem_write_en[0:2]};
-                                                w_word_part0_ff = {8'b0, mem_write_data[0:23]};
-                                                w_mask_part1_ff = {mem_write_en[3], 3'b0};
-                                                w_word_part1_ff = {mem_write_data[24:31], 24'b0};
-                                            end
-                                            else begin
-                                                state_ff = WRITE_SINGLE;
-                                                w_mask_part0_ff = {1'b0, mem_write_en[0:2]};
-                                                w_word_part0_ff = {8'b0, mem_write_data[0:23]};
-                                                w_mask_part1_ff = 4'b0;
-                                                w_word_part1_ff = 32'b0;
-                                            end
-                                        end
-                                    2'b10:
-                                    2'b11:
-                                endcase
-                            end
-                            else if(|mem_read_en) begin
-
-                            end
-                        end
-                    end
-                READ_SINGLE:
-                    begin
-                        input_ready = 1'b0;
-                    end
-                READ_MULTIPLE:
-                    begin
-                        input_ready = 1'b0;
-                    end
-                WRITE_SINGLE:
-                    begin
-                        input_ready = 1'b0;
-                    end
-                WRITE_MULTIPLE:
-                    begin
-                        input_ready = 1'b0;
-                    end
-            endcase
+            state_ff <= state;
+            address_part1_ff <= address_part1;
+            w_mask_part1_ff <= w_mask_part1;
+            w_word_part1_ff <= w_word_part1;
         end
     end
 
@@ -144,9 +175,16 @@ module data_mem #(
 
 
 
-    memory mem(
+    memory mem #(
+        .RS_ID_WIDTH(RS_ID_WIDTH),
+        .MEMORY_DEPTH(MEMORY_DEPTH)
+    )(
         .clk(clk),
 
+        .address(address),
+        .wen(w_mask_part0),
+        .write_data(w_word_part0),
 
+        .read_data(mem_read_data)
     );
 endmodule
