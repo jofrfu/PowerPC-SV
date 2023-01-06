@@ -57,6 +57,12 @@ module dispatcher#(
     output rotate_decode_t rot_decode,
     input logic[0:RS_ID_WIDTH-1] rot_id,
 
+    output logic load_store_valid,
+    input logic load_store_ready,
+    output load_store_decode_t load_store_decode,
+    output logic store_not_load,
+    input logic[0:RS_ID_WIDTH-1] load_store_id,
+
     output logic cmp_valid,
     input logic cmp_ready,
     output cmp_decode_t cmp_decode,
@@ -84,6 +90,8 @@ module dispatcher#(
         log_decode = decode.fixed_point.log;
         rot_decode = decode.fixed_point.rotate;
         sys_decode = decode.fixed_point.system;
+        load_store_decode = decode.fixed_point.load_store;
+        store_not_load = decode.fixed_point.execute == EXEC_STORE;
 
         add_sub_valid = 0;
         mul_valid = 0;
@@ -93,11 +101,36 @@ module dispatcher#(
         log_valid = 0;
         rot_valid = 0;
         sys_valid = 0;
+        load_store_valid = 0;
 
         case(decode.fixed_point.execute)
             //EXEC_FIXED_NONE:
-            //EXEC_LOAD:
-            //EXEC_STORE:
+            EXEC_LOAD:
+                begin
+                    // TODO: Figure out how to support the writeback of the effective address (either with an additional add instruction or inside of the load store unit)
+                    input_ready = load_store_ready;
+                    load_store_valid = input_valid;
+                    id_taken = load_store_id;
+                    write_to_gpr = 1;
+                    write_to_spr = 0;
+                    write_to_cr = 0;
+                    alter_xer = 0;
+                    alter_CR0 = 0;
+                    read_xer  = 0;
+                end
+            EXEC_STORE:
+                begin
+                    // TODO: Figure out how to support the writeback of the effective address (either with an additional add instruction or inside of the load store unit)
+                    input_ready = load_store_ready;
+                    load_store_valid = input_valid;
+                    id_taken = load_store_id;
+                    write_to_gpr = 0;
+                    write_to_spr = 0;
+                    write_to_cr = 0;
+                    alter_xer = 0;
+                    alter_CR0 = 0;
+                    read_xer  = 0;
+                end
             //EXEC_LOAD_STRING:
             //EXEC_STORE_STRING:
             EXEC_ADD_SUB:
