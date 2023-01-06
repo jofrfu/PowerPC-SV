@@ -17,7 +17,6 @@
 import ppc_types::*;
 
 module memory #(
-    parameter int RS_ID_WIDTH = 5,
     parameter int MEMORY_DEPTH = 32768
 )(
     input logic clk,
@@ -26,7 +25,7 @@ module memory #(
     input logic[0:3] wen,
     input logic[0:31] write_data,
 
-    output logic read_data
+    output logic[0:31] read_data
 );
 
     logic[0:31] memory[0:MEMORY_DEPTH-1];
@@ -34,7 +33,7 @@ module memory #(
     always_ff @(posedge clk)
     begin
         for(int i = 0; i < 4; i++) begin
-            if(wen(i)) begin
+            if(wen[i]) begin
                 memory[address][i +: 8] <= write_data[i +: 8];
             end
         end
