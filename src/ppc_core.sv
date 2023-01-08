@@ -14,7 +14,9 @@
     limitations under the License.
 ==============================================================================*/
 
+// synthesis translate_off
 `include "ppc_types.sv"
+// synthesis translate_on
 
 import ppc_types::*;
 

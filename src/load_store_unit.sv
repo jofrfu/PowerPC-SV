@@ -103,11 +103,13 @@ module load_store_unit #(
             0:  
                 begin
                     write_data_comb[0:7] = source_ff[24:31];
+                    write_data_comb[8:31] = 32'bx;
                 end
             1:  
                 begin
                     write_data_comb[0:7] = source_ff[16:23];
                     write_data_comb[8:15] = source_ff[24:31];
+                    write_data_comb[16:31] = 16'bx;
                 end
             2:  
                 begin
