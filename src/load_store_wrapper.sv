@@ -60,17 +60,39 @@ module load_store_wrapper #(
     
     output logic[0:31] result,
     //-----------------------------------------------------
+
+    //------ Interface to data cache or memory ------
+    output logic to_mem_valid,
+    input  logic to_mem_ready,
+    output logic[0:RS_ID_WIDTH-1] to_mem_rs_id,
+    output logic[0:4] to_mem_reg_addr,
+
+    output logic[0:31] mem_address,
+    output logic[0:3]  mem_write_en,
+    output logic[0:31] mem_write_data,
+    output logic[0:3]  mem_read_en,
+    //-----------------------------------------------
+
+    //------ Interface from data cache or memory ------
+    input  logic from_mem_valid,
+    output logic from_mem_ready,
+    input  logic[0:RS_ID_WIDTH-1] from_mem_rs_id,
+    input  logic[0:4] from_mem_reg_addr,
+
+    input  logic[0:31] mem_read_data
+    //-------------------------------------------------
 );
 
     typedef struct packed {
-        load_store_decode_t add_sub;
+        load_store_decode_t load_store;
         logic store;
         logic[0:4] result_reg_addr;
     } control_t;
 
     control_t rs_control_in;
 
-    assign rs_control_in.add_sub = control;
+    assign rs_control_in.load_store = control;
+    assign rs_control_in.store = store;
     assign rs_control_in.result_reg_addr = result_reg_addr_in;
 
 
@@ -96,14 +118,14 @@ module load_store_wrapper #(
 
         .op_value_valid_in({op1_valid, op2_valid, source_valid}),
         .op_rs_id_in({op1_rs_id, op2_rs_id, source_rs_id}),
-        .op_value_in({op1, op2, source_in}),
+        .op_value_in({op1, op2, source}),
         .control_in(rs_control_in),
 
         .id_taken(id_taken),
 
-        .operand_valid({update_op_valid, update_op_valid, update_source_valid}),
-        .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in, update_source_rs_id_in}),
-        .update_op_value_in({update_op_value_in, update_op_value_in, update_source_value_in}),
+        .operand_valid({update_op_valid, update_op_valid, update_op_valid}),
+        .update_op_rs_id_in({update_op_rs_id_in, update_op_rs_id_in, update_op_rs_id_in}),
+        .update_op_value_in({update_op_value_in, update_op_value_in, update_op_value_in}),
     
         .output_valid(rs_output_valid),
         .output_ready(rs_output_ready),
@@ -113,7 +135,6 @@ module load_store_wrapper #(
         .op_rs_id_out(rs_id_to_unit)
     );
 
-    // TODO: Finish this unit
     load_store_unit #(
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) LOAD_STORE (
@@ -128,8 +149,9 @@ module load_store_wrapper #(
 
         .op1(rs_op1),
         .op2(rs_op2),
-        .xer_in(rs_xer),
-        .control(rs_control_out.add_sub),
+        .source(rs_source),
+        .store(rs_control_out.store),
+        .control(rs_control_out.load_store),
 
         .output_valid(output_valid),
         .output_ready(output_ready),
@@ -137,6 +159,22 @@ module load_store_wrapper #(
         .rs_id_out(rs_id_out),
         .result_reg_addr_out(result_reg_addr_out),
         .result(result),
-        .cr0_xer(cr0_xer)
+
+        .to_mem_valid(to_mem_valid),
+        .to_mem_ready(to_mem_ready),
+        .to_mem_rs_id(to_mem_rs_id),
+        .to_mem_reg_addr(to_mem_reg_addr),
+
+        .mem_address(mem_address),
+        .mem_write_en(mem_write_en),
+        .mem_write_data(mem_write_data),
+        .mem_read_en(mem_read_en),
+
+        .from_mem_valid(from_mem_valid),
+        .from_mem_ready(from_mem_ready),
+        .from_mem_rs_id(from_mem_rs_id),
+        .from_mem_reg_addr(from_mem_reg_addr),
+
+        .mem_read_data(mem_read_data)
     );
 endmodule

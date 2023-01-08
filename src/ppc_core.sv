@@ -26,16 +26,31 @@ module ppc_core (
     output logic instruction_ready,
     input  logic[0:31] instruction,
 
-    // TODO: Remove signals below, only needed to keep internal signals
-    output logic top_output_valid,
-    output logic[0:5] top_rs_id_out,
-    output logic[0:4] top_result_reg_addr_out,
-    output logic[0:31] top_result_out,
+    //------ Interface to data cache or memory ------
+    output logic to_mem_valid,
+    input  logic to_mem_ready,
+    output logic[0:RS_ID_WIDTH-1] to_mem_rs_id,
+    output logic[0:4] to_mem_reg_addr,
+
+    output logic[0:31] mem_address,
+    output logic[0:3]  mem_write_en,
+    output logic[0:31] mem_write_data,
+    output logic[0:3]  mem_read_en,
+    //-----------------------------------------------
+
+    //------ Interface from data cache or memory ------
+    input  logic from_mem_valid,
+    output logic from_mem_ready,
+    input  logic[0:RS_ID_WIDTH-1] from_mem_rs_id,
+    input  logic[0:4] from_mem_reg_addr,
+
+    input  logic[0:31] mem_read_data,
+    //-------------------------------------------------
 
     output logic trap
 );
 
-    localparam int RS_ID_WIDTH = 6;
+    localparam int RS_ID_WIDTH = 7;
 
     logic decode_valid;
     logic decode_ready;
@@ -86,6 +101,12 @@ module ppc_core (
     logic rot_ready;
     rotate_decode_t rot_decode;
     logic[0:RS_ID_WIDTH-1] rot_id;
+
+    logic load_store_valid;
+    logic load_store_ready;
+    load_store_decode_t load_store_decode;
+    logic store_not_load;
+    logic[0:RS_ID_WIDTH-1] load_store_id;
 
     logic cmp_valid;
     logic cmp_ready;
@@ -271,12 +292,12 @@ module ppc_core (
     end
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
-    logic arbiter_valid[0:5];
-    logic arbiter_ready[0:5];
-    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:5];
-    logic[0:4] arbiter_result_reg_addr[0:5];
-    logic[0:31] arbiter_result[0:5];
-    cond_exception_t arbiter_cr0_xer[0:5];
+    logic arbiter_valid[0:6];
+    logic arbiter_ready[0:6];
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:6];
+    logic[0:4] arbiter_result_reg_addr[0:6];
+    logic[0:31] arbiter_result[0:6];
+    cond_exception_t arbiter_cr0_xer[0:6];
 
     logic arbiter_spr_valid;
     logic arbiter_spr_ready;
@@ -503,6 +524,64 @@ module ppc_core (
         .cr0_xer(arbiter_cr0_xer[4])
     );
 
+    // Load/store unit signals
+    load_store_wrapper #(
+        .RS_OFFSET(40),
+        .RS_DEPTH(8),
+        .RS_ID_WIDTH(RS_ID_WIDTH)
+    ) LOAD_STORE (
+        .clk(clk),
+        .rst(rst),
+
+        .input_valid(load_store_valid),
+        .input_ready(load_store_ready),
+        .result_reg_addr_in(decode.fixed_point.control.result_reg_address),
+
+        .op1(gpr_op1),
+        .op1_valid(gpr_op1_valid),
+        .op1_rs_id(gpr_op1_rs_id),
+        .op2(gpr_op2),
+        .op2_valid(gpr_op2_valid),
+        .op2_rs_id(gpr_op2_rs_id),
+        .source(gpr_target),
+        .source_valid(gpr_target_valid),
+        .source_rs_id(gpr_target_rs_id),
+
+        .control(load_store_decode),
+        .store(store_not_load),
+
+        .id_taken(load_store_id),
+
+        .update_op_valid(gpr_write_enable),
+        .update_op_rs_id_in(gpr_write_rs_id),
+        .update_op_value_in(gpr_write_value),
+
+        .output_valid(arbiter_valid[5]),
+        .output_ready(arbiter_ready[5]),
+        .rs_id_out(arbiter_rs_id[5]),
+        .result_reg_addr_out(arbiter_result_reg_addr[5]),
+        .result(arbiter_result[5]),
+
+        .to_mem_valid(to_mem_valid),
+        .to_mem_ready(to_mem_ready),
+        .to_mem_rs_id(to_mem_rs_id),
+        .to_mem_reg_addr(to_mem_reg_addr),
+
+        .mem_address(mem_address),
+        .mem_write_en(mem_write_en),
+        .mem_write_data(mem_write_data),
+        .mem_read_en(mem_read_en),
+
+        .from_mem_valid(from_mem_valid),
+        .from_mem_ready(from_mem_ready),
+        .from_mem_rs_id(from_mem_rs_id),
+        .from_mem_reg_addr(from_mem_reg_addr),
+
+        .mem_read_data(mem_read_data)
+    );
+
+    assign arbiter_cr0_xer[5] = '{default: '0};
+
     logic cmp_output_valid;
     logic cmp_output_ready;
     logic[0:RS_ID_WIDTH-1] cmp_rs_id;
@@ -510,7 +589,7 @@ module ppc_core (
     logic[0:3] cmp_result;
 
     cmp_wrapper #(
-        .RS_OFFSET(40),
+        .RS_OFFSET(48),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) CMP (
@@ -550,7 +629,7 @@ module ppc_core (
     );
 
     trap_wrapper #(
-        .RS_OFFSET(48),
+        .RS_OFFSET(56),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) TRAP (   
@@ -596,7 +675,7 @@ module ppc_core (
     end
 
     sys_wrapper #(
-        .RS_OFFSET(56),
+        .RS_OFFSET(64),
         .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) SYS (
@@ -632,11 +711,11 @@ module ppc_core (
         .update_cr_op_rs_id_in(cr_write_rs_id),
         .update_cr_op_value_in({cr_write_value[0:3], cr_write_value[4:7], cr_write_value[8:11], cr_write_value[12:15], cr_write_value[16:19], cr_write_value[20:23], cr_write_value[24:27], cr_write_value[28:31]}),
 
-        .gpr_output_valid(arbiter_valid[5]),
-        .gpr_output_ready(arbiter_ready[5]),
-        .gpr_rs_id_out(arbiter_rs_id[5]),
-        .gpr_result_reg_addr_out(arbiter_result_reg_addr[5]),
-        .gpr_result(arbiter_result[5]),
+        .gpr_output_valid(arbiter_valid[6]),
+        .gpr_output_ready(arbiter_ready[6]),
+        .gpr_rs_id_out(arbiter_rs_id[6]),
+        .gpr_result_reg_addr_out(arbiter_result_reg_addr[6]),
+        .gpr_result(arbiter_result[6]),
 
         .spr_output_valid(arbiter_spr_valid),
         .spr_output_ready(arbiter_spr_ready),
@@ -651,7 +730,7 @@ module ppc_core (
         .cr_result(arbiter_cr_result)
     );
 
-    assign arbiter_cr0_xer[5] = '{default: '0};
+    assign arbiter_cr0_xer[6] = '{default: '0};
 
     // Arbiter output signals
     logic arbiter_output_valid;
@@ -680,7 +759,7 @@ module ppc_core (
 
     simple_write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
-        .ARBITER_DEPTH(6)
+        .ARBITER_DEPTH(7)
     ) ARBITER (
         .clk(clk),
         .rst(rst),
@@ -725,10 +804,4 @@ module ppc_core (
         .cr_output_enable(cr_output_enable),
         .cr_result_out(cr_write_value)
     );
-
-    // TODO: Remove once load/store is available
-    assign top_output_valid = arbiter_output_valid;
-    assign top_rs_id_out = arbiter_rs_id_out;
-    assign top_result_reg_addr_out = arbiter_result_reg_addr_out;
-    assign top_result_out = arbiter_result_out;
 endmodule
