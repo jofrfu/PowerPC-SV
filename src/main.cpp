@@ -3,29 +3,25 @@
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 #include <cstdint>
-#include "Vppc_core.h"
-#include "Vppc_core___024unit.h"
+#include "Vppc_top.h"
+#include "Vppc_top___024unit.h"
 
-#define MAX_SIM_TIME 200
+#define MAX_SIM_TIME 2000
 
 int main(int argc, char** argv, char** env) {
-    Vppc_core *dut = new Vppc_core;
+    Vppc_top *dut = new Vppc_top;
     vluint64_t sim_time = 0;
 
     Verilated::traceEverOn(true);
     VerilatedVcdC *m_trace = new VerilatedVcdC;
     dut->trace(m_trace, 5);
-    m_trace->open("ppc_core.vcd");
+    m_trace->open("ppc_top.vcd");
 
 
 
 
-    int32_t instructions[5] = {
-        0x38800100,
-        0x38A00008,
-        0x7CC42A14,
-        0x7CE42BD6,
-        0x7D0429D6
+    uint32_t instructions[23] = {
+        0x38800100, 0x38A00008, 0x7CC42A14, 0x7CE42BD6, 0x7D0429D6, 0x38800001, 0x5084402E, 0x60840002, 0x5084402E, 0x60840003, 0x5084402E, 0x60840004, 0x90800000, 0x38A00005, 0x50A5402E, 0x60A50006, 0x50A5402E, 0x60A50007, 0x50A5402E, 0x60A50008, 0x90A00004, 0x81E00000, 0x82000004
     };
 
 
@@ -49,7 +45,7 @@ int main(int argc, char** argv, char** env) {
         sim_time++;
     }
 
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 23; i++) {
         dut->clk ^= 1;
         dut->instruction_valid = 1;
         dut->instruction = instructions[i];

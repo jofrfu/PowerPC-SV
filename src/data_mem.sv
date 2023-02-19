@@ -13,12 +13,11 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 ==============================================================================*/
-`include "ppc_types.sv"
 
 import ppc_types::*;
 
 module data_mem #(
-    parameter int RS_ID_WIDTH = 5,
+    parameter int RS_ID_WIDTH = 7,
     parameter int MEMORY_DEPTH = 32768
 )(
     input logic clk,
