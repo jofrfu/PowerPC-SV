@@ -15,7 +15,7 @@
 ==============================================================================*/
 
 import ppc_types::*;
-
+// TODO: How to ensure causality on out-of-order load and store? --> Implement a special RS that executes in order
 module load_store_unit #(
     parameter int RS_ID_WIDTH = 5
 )(

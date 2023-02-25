@@ -33,7 +33,7 @@ module reservation_station #(
     
     input logic                     op_value_valid_in[0:OPERANDS-1],
     input logic[0:RS_ID_WIDTH-1]    op_rs_id_in[0:OPERANDS-1],
-    input logic[0:OPERAND_WIDTH-1] op_value_in[0:OPERANDS-1],
+    input logic[0:OPERAND_WIDTH-1]  op_value_in[0:OPERANDS-1],
     input CONTROL_TYPE              control_in,
     
     output logic[0:RS_ID_WIDTH-1]   id_taken,
@@ -56,8 +56,10 @@ module reservation_station #(
     //-----------------------------------------------------
 );
 
+    typedef enum logic[0:1] { INVALID = 0, VALID = 1, EXECUTING = 2 } rs_state_t;
+
     typedef struct packed {
-        logic valid;
+        rs_state_t state;
         CONTROL_TYPE control;
         logic[0:OPERANDS-1] op_value_valid;
         logic[0:OPERANDS-1][0:RS_ID_WIDTH-1] op_rs_id;
@@ -77,9 +79,13 @@ module reservation_station #(
         can_take = 0;
         id_take = RS_OFFSET;
         for(int i = RS_DEPTH-1; i >= 0; i--) begin
-            if(~reservation_stations_ff[i].valid) begin
-                can_take = 1;
-                id_take = i + RS_OFFSET;
+            for(int j = 0; j < OPERANDS; j++) begin
+                // Check if the RS is invalid or if the RS execution just finished to increase performance
+                if(  (reservation_stations_ff[i].state == INVALID) | 
+                    ((reservation_stations_ff[i].state == EXECUTING) & operand_valid[j] & update_op_rs_id_in[j] == (i + RS_OFFSET))) begin
+                    can_take = 1;
+                    id_take = i + RS_OFFSET;
+                end
             end
         end
     end
@@ -97,7 +103,7 @@ module reservation_station #(
         can_dispatch = 0;
         id_dispatch = RS_OFFSET;
         for(int i = RS_DEPTH-1; i >= 0; i--) begin            
-            if(&reservation_stations_ff[i].op_value_valid & reservation_stations_ff[i].valid) begin
+            if(&reservation_stations_ff[i].op_value_valid & (reservation_stations_ff[i].state == VALID)) begin
                 can_dispatch = 1;
                 id_dispatch = i + RS_OFFSET;
             end
@@ -120,15 +126,13 @@ module reservation_station #(
         else begin
             // Add the request, if an entry is available
             if(can_take && take_valid) begin
-                reservation_stations_ff[id_take - RS_OFFSET].valid   <= 1;
+                reservation_stations_ff[id_take - RS_OFFSET].state   <= VALID;
                 reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
                 for(int i = 0; i < OPERANDS; i++) begin
                     // The operands needed by the instruction can either come from a register or a unit
-                    if(operand_valid[i]) begin
-                        if(~op_value_valid_in[i] & update_op_rs_id_in[i] == (id_take - RS_OFFSET)) begin
-                            reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= 1;
-                            reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= update_op_value_in[i];
-                        end
+                    if(operand_valid[i] & ~op_value_valid_in[i] & update_op_rs_id_in[i] == op_rs_id_in[i]) begin
+                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= 1;
+                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= update_op_value_in[i];
                     end else begin
                         reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= op_value_valid_in[i];
                         reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= op_value_in[i];
@@ -137,16 +141,21 @@ module reservation_station #(
                 end
             end
             
-            // Reset the entry, if it was dispatched
+            // Set the entry to EXECUTING, if it was dispatched
             if(can_dispatch && output_ready) begin
-                reservation_stations_ff[id_dispatch - RS_OFFSET].valid <= 0;
+                reservation_stations_ff[id_dispatch - RS_OFFSET].state <= EXECUTING;
             end
             
-            // Update the values of registers in the reservation stations
             for(int i = 0; i < RS_DEPTH; i++) begin
                 for(int j = 0; j < OPERANDS; j++) begin
                     if(operand_valid[j]) begin
-                        if(reservation_stations_ff[i].valid && ~reservation_stations_ff[i].op_value_valid[j]) begin
+                        // Make the reservation station available after execution has finished (this ensures correct causality)
+                        // To do this, we are watching the update port to see if the result had a write-back
+                        if((reservation_stations_ff[i].state == EXECUTING) & update_op_rs_id_in[j] == (i + RS_OFFSET)) begin
+                            reservation_stations_ff[i].state = INVALID;
+                        end
+                        // Update the values of registers in the reservation stations
+                        if((reservation_stations_ff[i].state == VALID) & ~reservation_stations_ff[i].op_value_valid[j]) begin
                             if(reservation_stations_ff[i].op_rs_id[j] == update_op_rs_id_in[j]) begin
                                 reservation_stations_ff[i].op_value_valid[j]    <= 1;
                                 reservation_stations_ff[i].op_value[j]          <= update_op_value_in[j];
