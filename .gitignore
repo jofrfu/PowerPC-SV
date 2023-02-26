@@ -1,3 +1,5 @@
 src/obj_dir
 src/*.vcd
 **/.DS_STORE
+!src/*.sv
+!src/*.cpp

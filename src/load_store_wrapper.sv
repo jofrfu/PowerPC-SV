@@ -103,7 +103,8 @@ module load_store_wrapper #(
     control_t rs_control_out;
     logic[0:RS_ID_WIDTH-1] rs_id_to_unit;
 
-    reservation_station #(
+    // Special reservation station, which executes in-order
+    in_order_station #(
         .OPERANDS(3),   // Op1, Op2 and Source
         .RS_OFFSET(RS_OFFSET),
         .RS_DEPTH(RS_DEPTH),
