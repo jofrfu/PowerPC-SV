@@ -177,6 +177,16 @@ module sys_wrapper #(
         .op_rs_id_out(rs_gpr_id_to_unit)
     );
 
+// synthesis translate_off
+    /*always_comb
+    begin
+        if(rs_gpr_valid & rs_gpr_ready) begin
+            int operands[] = {rs_gpr_op};
+            printInfo("SYS Unit", "sys", operands);
+        end
+    end*/
+// synthesis translate_on
+
     reservation_station #(
         .OPERANDS(1),
         .RS_OFFSET(RS_OFFSET + RS_DEPTH),

@@ -118,6 +118,16 @@ module add_sub_wrapper #(
         .op_rs_id_out(rs_id_to_unit)
     );
 
+// synthesis translate_off
+    always_comb
+    begin
+        if(rs_output_valid & rs_output_ready) begin
+            int operands[] = {rs_op1, rs_op2, rs_xer};
+            printInfo("ADD_SUB Unit", "add/sub", operands);
+        end
+    end
+// synthesis translate_on
+
     add_sub_unit #(
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) ADD_SUB (

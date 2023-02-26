@@ -121,6 +121,16 @@ module rot_wrapper #(
         .op_rs_id_out(rs_id_to_unit)
     );
 
+// synthesis translate_off
+    always_comb
+    begin
+        if(rs_output_valid & rs_output_ready) begin
+            int operands[] = {rs_op1, rs_op2, rs_xer};
+            printInfo("ROT Unit", "rot", operands);
+        end
+    end
+// synthesis translate_on
+
     rot_unit #(
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) ROT (
