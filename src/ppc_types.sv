@@ -587,7 +587,7 @@ package ppc_types;
     
 
 `define declare_or_reduce(WIDTH)    \
-    function logic or_reduce(input logic x[0:WIDTH-1]); \
+    function automatic logic or_reduce(input logic x[0:WIDTH-1]); \
         logic res = x[0];                               \
         for(int i = 1; i < WIDTH; i++) begin            \
             res |= x[i];                                \
@@ -616,7 +616,7 @@ package ppc_types;
     */
 
     // Function to print data in a formatted way
-    function void printInfo(input string unit, input string operation, input int operands[]);
+    function automatic void printInfo(input string unit, input string operation, input int operands[]);
         $display("---------- %s executing %s ----------", unit, operation);
         foreach(operands[i]) $write("Op%0d=0x%h, ", i, operands[i]);
         $write("\n");
