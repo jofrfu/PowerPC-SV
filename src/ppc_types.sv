@@ -618,7 +618,7 @@ package ppc_types;
     // Function to print data in a formatted way
     function void printInfo(input string unit, input string operation, input int operands[]);
         $display("---------- %s executing %s ----------", unit, operation);
-        foreach(operands[i]) $write("Op%d=0x%h, ", i, operands[i]);
+        foreach(operands[i]) $write("Op%0d=0x%h, ", i, operands[i]);
         $write("\n");
     endfunction
 endpackage
