@@ -429,8 +429,10 @@ package ppc_types;
         logic[0:4] result_reg_address;
         logic op1_use_imm;
         logic op2_use_imm;
+        logic target_use_imm;
         logic[0:31] op1_immediate;
         logic[0:31] op2_immediate;
+        logic[0:31] target_immediate;
     } common_control_t;
     
     typedef struct packed {

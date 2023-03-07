@@ -268,8 +268,14 @@ module ppc_core (
             gpr_op2_valid = gpr_read_value_valid[1];
         end
 
-        gpr_target = gpr_read_value[2];
-        gpr_target_valid = gpr_read_value_valid[2];
+        if(decode.fixed_point.control.target_use_imm) begin
+            gpr_target = decode.fixed_point.control.target_immediate;
+            gpr_target_valid = 1;
+        end
+        else begin
+            gpr_target = gpr_read_value[2];
+            gpr_target_valid = gpr_read_value_valid[2];
+        end
     end
 
     // SPR read bus signals. Address 1 refers to the XER.

@@ -240,51 +240,61 @@ module instruction_decode(
                     23: // lwzx
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 0, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     55: // lwzux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 1, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     87: // lbzx
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 1, 0, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     119: // lbzux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 1, 1, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     279: // lhzx
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 2, 0, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     311: // lhzux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 2, 1, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     341: // lwax
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 0, 1, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     343: // lhax
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 2, 0, 1, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     373: // lwaux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 1, 1, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     375: // lhaux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 2, 1, 1, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     // X Form store instructions
@@ -296,6 +306,7 @@ module instruction_decode(
                     183: // stwux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 1, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     215: // stbx
@@ -306,6 +317,7 @@ module instruction_decode(
                     247: // stbux
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 1, 1, 0, 0);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     407: // sthx
@@ -322,6 +334,7 @@ module instruction_decode(
                     534: // lwbrx
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 4, 0, 0, 1);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     662: // stwbrx
@@ -332,6 +345,7 @@ module instruction_decode(
                     790: // lhbrx
                         begin
                             decode_comb.fixed_point = decode_load_store_x_form(X_form, 2, 0, 0, 1);
+                            decode_comb.fixed_point.control.target_use_imm = 1;
                             decode_comb.fixed_point.execute = EXEC_LOAD;
                         end
                     918: // sthbrx
@@ -812,41 +826,49 @@ module instruction_decode(
             32: // lwz
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             33: // lwzu
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 4, 1, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             34: // lbz
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 1, 0, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             35: // lbzu
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 1, 1, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             40: // lhz
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 2, 0, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             41: // lhzu
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 2, 1, 0, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             42: // lha
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 2, 0, 1, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             43: // lhau
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 2, 1, 1, 0);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             // D Form store instructions
@@ -884,6 +906,7 @@ module instruction_decode(
             46: // lmw
                 begin
                     decode_comb.fixed_point = decode_load_zero(D_form, 4, 0, 0, 1);
+                    decode_comb.fixed_point.control.target_use_imm = 1;
                     decode_comb.fixed_point.execute = EXEC_LOAD;
                 end
             47: // stmw
