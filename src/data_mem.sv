@@ -257,9 +257,14 @@ module data_mem #(
     end
 
 
-    logic enable = (stage_output_valid_ff & output_ready) | (input_valid & ~stage_output_valid_ff);
+    logic enable;
+
+    // TODO: Check correctness of the equation. I think the enable has to be used in the input_ready as well to support backpressure!
+    assign enable = (output_valid & output_ready) | (stage_output_valid & ~stage_output_valid_ff);
 
     assign output_valid = stage_output_valid_ff;
+    assign rs_id_out = stage_rs_id_ff;
+    assign result_reg_addr_out = stage_result_reg_addr_ff;
 
 
     always_ff @(posedge clk)
@@ -274,6 +279,8 @@ module data_mem #(
             r_word_part0_ff <= 0;
             r_mask_ff <= 4'b0;
             address_offset_ff <= 0;
+            stage_rs_id_ff <= 0;
+            stage_result_reg_addr_ff <= 0;
             stage_output_valid_ff <= 1'b0;
         end
         else begin
@@ -287,6 +294,9 @@ module data_mem #(
                 r_word_part0_ff <= r_word;
                 r_mask_ff <= mem_read_en;
                 address_offset_ff <= address_offset;
+                stage_rs_id_ff <= stage_rs_id;
+                stage_result_reg_addr_ff <= stage_result_reg_addr;
+                stage_output_valid_ff <= stage_output_valid;
             end
         end
     end

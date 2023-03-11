@@ -74,7 +74,7 @@ module load_store_unit #(
     always_comb
     begin
         // Unaligned accesses should be handled in the cache, with the help of the busy and read_data_valid signals
-        if(store_ff[0]) begin
+        /*if(store_ff[0]) begin
             case(control_stages_ff[0].word_size)
                 0:  
                     begin
@@ -97,16 +97,18 @@ module load_store_unit #(
         end
         else begin
             wen_comb = 4'b0000;
-        end
+        end*/
 
         case(control_stages_ff[0].word_size)
             0:  
                 begin
+                    wen_comb = 4'b1000;
                     write_data_comb[0:7] = source_ff[24:31];
                     write_data_comb[8:31] = 32'bx;
                 end
             1:  
                 begin
+                    wen_comb = 4'b1100;
                     write_data_comb[0:7] = source_ff[16:23];
                     write_data_comb[8:15] = source_ff[24:31];
                     write_data_comb[16:31] = 16'bx;
@@ -114,10 +116,12 @@ module load_store_unit #(
             2:  
                 begin
                     // This case shouldn't happen!
+                    wen_comb = 4'b0000;
                     write_data_comb = source_ff;
                 end
             3:  
                 begin
+                    wen_comb = 4'b1111;
                     write_data_comb = source_ff;
                 end
         endcase
