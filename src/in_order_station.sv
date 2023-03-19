@@ -49,6 +49,8 @@ module in_order_station #(
     //------ Simple ready-valid interface for output ------
     output logic        output_valid,
     input logic         output_ready,
+
+    input logic         no_output,
     
     output logic[0:OPERAND_WIDTH-1] op_value_out[0:OPERANDS-1],
     output CONTROL_TYPE             control_out,
@@ -146,10 +148,10 @@ module in_order_station #(
                 end
             end
             
-            // Set the entry to EXECUTING, if it was dispatched
+            // Set the entry to EXECUTING, if it was dispatched. If there is no result, set the entry to INVALID
             if(can_dispatch && output_ready) begin
                 read_head_ff <= read_head_ff + 1;
-                reservation_stations_ff[id_dispatch - RS_OFFSET].state <= EXECUTING;
+                reservation_stations_ff[id_dispatch - RS_OFFSET].state <= no_output ? INVALID : EXECUTING;
             end
             
             for(int i = 0; i < RS_DEPTH; i++) begin

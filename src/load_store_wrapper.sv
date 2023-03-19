@@ -95,6 +95,8 @@ module load_store_wrapper #(
     assign rs_control_in.store = store;
     assign rs_control_in.result_reg_addr = result_reg_addr_in;
 
+    logic no_output;
+    assign no_output = store & ~control.write_ea;
 
     logic rs_output_valid;
     logic rs_output_ready;
@@ -130,6 +132,8 @@ module load_store_wrapper #(
     
         .output_valid(rs_output_valid),
         .output_ready(rs_output_ready),
+
+        .no_output(no_output),
 
         .op_value_out('{rs_op1, rs_op2, rs_source}),
         .control_out(rs_control_out),
