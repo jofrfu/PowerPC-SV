@@ -75,10 +75,10 @@ module data_mem #(
                     r_mask = mem_read_en;
 
                     if(input_valid) begin
-                        input_ready = 1'b1;
                         address = mem_address[0:29];
                         address_part1 = mem_address[0:29] + 1;
                         if(|mem_write_en) begin
+                            input_ready = 1'b1;
                             stage_output_valid = 1'b0;
 
                             case(mem_address[30:31])
@@ -142,16 +142,19 @@ module data_mem #(
                                     begin
                                         state = IDLE;
                                         stage_output_valid = 1'b1;
+                                        input_ready = enable;
                                     end
                                 2'b01:
                                     begin
                                         if(mem_read_en[3]) begin
                                             state = READ_MULTIPLE;
                                             stage_output_valid = 1'b0;
+                                            input_ready = 1'b1;
                                         end
                                         else begin
                                             state = IDLE;
                                             stage_output_valid = 1'b1;
+                                            input_ready = enable;
                                         end
                                     end
                                 2'b10:
@@ -159,10 +162,12 @@ module data_mem #(
                                         if(|mem_write_en[2:3]) begin
                                             state = READ_MULTIPLE;
                                             stage_output_valid = 1'b0;
+                                            input_ready = 1'b1;
                                         end
                                         else begin
                                             state = IDLE;
                                             stage_output_valid = 1'b1;
+                                            input_ready = enable;
                                         end
                                     end
                                 2'b11:
@@ -170,10 +175,12 @@ module data_mem #(
                                         if(|mem_write_en[1:3]) begin
                                             state = READ_MULTIPLE;
                                             stage_output_valid = 1'b0;
+                                            input_ready = 1'b1;
                                         end
                                         else begin
                                             state = IDLE;
                                             stage_output_valid = 1'b1;
+                                            input_ready = enable;
                                         end
                                     end
                             endcase

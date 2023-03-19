@@ -34,7 +34,7 @@ module memory #(
     begin
         for(int i = 0; i < 4; i++) begin
             if(wen[i]) begin
-                memory[address][i +: 8] <= write_data[i +: 8];
+                memory[address][i*8 +: 8] <= write_data[i*8 +: 8];
             end
         end
 
