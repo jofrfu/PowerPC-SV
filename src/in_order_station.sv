@@ -16,13 +16,18 @@
 
 import ppc_types::*;
 
+/**
+ * The in-order station is only meant for the load/store unit, since memory accesses should be in order.
+ * To allow multiple write-backs of the load/store unit, every second RS ID is unasigned here and will be filled in by the lsu.
+ */
+
 module in_order_station #(
     parameter int OPERANDS = 2,     // Describes how many operands are used by instructions
     parameter int OPERAND_WIDTH = 32,   // Describes the bit width of operands
     parameter int RS_OFFSET = 0,    // The address offset of these particular reservation stations
     parameter int RS_DEPTH = 8,     // Describes the number of reservation station for one unit
     parameter int RS_ID_WIDTH = 5,  // The bit width of the ID (or address) of all reservations stations in the system
-    parameter type CONTROL_TYPE = add_sub_decode_t  // The control type for the unit
+    parameter type CONTROL_TYPE = load_store_decode_t  // The control type for the unit
 )(
     input logic clk,
     input logic rst,
@@ -81,17 +86,17 @@ module in_order_station #(
     begin
         if(reservation_stations_ff[write_head_ff].state == INVALID) begin
             can_take = 1;
-            id_take = write_head_ff + RS_OFFSET;
+            id_take = write_head_ff;
         end
         else begin
             can_take = 0;
-            id_take = RS_OFFSET;
+            id_take = 0;
         end
     end
 
     
     assign take_ready = can_take;
-    assign id_taken = id_take;
+    assign id_taken = {id_take, 1'b0} + RS_OFFSET;
     //------------------------------------
     
     logic can_dispatch; // Designates, if an instruction can be dispatched to the unit
@@ -103,21 +108,21 @@ module in_order_station #(
     begin
         if(&reservation_stations_ff[read_head_ff].op_value_valid & (reservation_stations_ff[read_head_ff].state == VALID)) begin
             can_dispatch = 1;
-            id_dispatch = read_head_ff + RS_OFFSET;
+            id_dispatch = read_head_ff;
         end
         else begin
             can_dispatch = 0;
-            id_dispatch = RS_OFFSET;
+            id_dispatch = 0;
         end
     end
 
     
     assign output_valid = can_dispatch;
     for(genvar i = 0; i < OPERANDS; i++) begin
-        assign op_value_out[i] = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value[i];
+        assign op_value_out[i] = reservation_stations_ff[id_dispatch].op_value[i];
     end
-    assign control_out  = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
-    assign op_rs_id_out = id_dispatch;
+    assign control_out  = reservation_stations_ff[id_dispatch].control;
+    assign op_rs_id_out = {id_dispatch, 1'b0} + RS_OFFSET;
     //------------------------------------
     
     always_ff @(posedge clk)
@@ -133,25 +138,25 @@ module in_order_station #(
                 // Increment the write head (we assum the size is a power of 2)
                 write_head_ff <= write_head_ff +1;
 
-                reservation_stations_ff[id_take - RS_OFFSET].state   <= VALID;
-                reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
+                reservation_stations_ff[id_take].state   <= VALID;
+                reservation_stations_ff[id_take].control <= control_in;
                 for(int i = 0; i < OPERANDS; i++) begin
                     // The operands needed by the instruction can either come from a register or a unit
                     if(operand_valid[i] & ~op_value_valid_in[i] & update_op_rs_id_in[i] == op_rs_id_in[i]) begin
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= 1;
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= update_op_value_in[i];
+                        reservation_stations_ff[id_take].op_value_valid[i] <= 1;
+                        reservation_stations_ff[id_take].op_value[i]       <= update_op_value_in[i];
                     end else begin
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= op_value_valid_in[i];
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= op_value_in[i];
+                        reservation_stations_ff[id_take].op_value_valid[i] <= op_value_valid_in[i];
+                        reservation_stations_ff[id_take].op_value[i]       <= op_value_in[i];
                     end
-                    reservation_stations_ff[id_take - RS_OFFSET].op_rs_id[i] <= op_rs_id_in[i];
+                    reservation_stations_ff[id_take].op_rs_id[i] <= op_rs_id_in[i];
                 end
             end
             
             // Set the entry to EXECUTING, if it was dispatched. If there is no result, set the entry to INVALID
             if(can_dispatch && output_ready) begin
                 read_head_ff <= read_head_ff + 1;
-                reservation_stations_ff[id_dispatch - RS_OFFSET].state <= no_output ? INVALID : EXECUTING;
+                reservation_stations_ff[id_dispatch].state <= no_output ? INVALID : EXECUTING;
             end
             
             for(int i = 0; i < RS_DEPTH; i++) begin
@@ -159,7 +164,7 @@ module in_order_station #(
                     if(operand_valid[j]) begin
                         // Make the reservation station available after execution has finished (this ensures correct causality)
                         // To do this, we are watching the update port to see if the result had a write-back
-                        if((reservation_stations_ff[i].state == EXECUTING) & update_op_rs_id_in[j] == (i + RS_OFFSET)) begin
+                        if((reservation_stations_ff[i].state == EXECUTING) & update_op_rs_id_in[j] == ({i, 1'b0} + RS_OFFSET)) begin
                             reservation_stations_ff[i].state = INVALID;
                         end
                         // Update the values of registers in the reservation stations

@@ -593,7 +593,7 @@ module ppc_core (
     logic[0:3] cmp_result;
 
     cmp_wrapper #(
-        .RS_OFFSET(48),
+        .RS_OFFSET(56),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) CMP (
@@ -633,7 +633,7 @@ module ppc_core (
     );
 
     trap_wrapper #(
-        .RS_OFFSET(56),
+        .RS_OFFSET(64),
         .RS_DEPTH(8),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) TRAP (   
@@ -679,7 +679,7 @@ module ppc_core (
     end
 
     sys_wrapper #(
-        .RS_OFFSET(64),
+        .RS_OFFSET(72),
         .RS_DEPTH(2), // This component holds 3*2 reservation stations (GPR, SPR and CR)
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) SYS (

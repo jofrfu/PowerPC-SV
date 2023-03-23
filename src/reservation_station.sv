@@ -77,21 +77,21 @@ module reservation_station #(
     always_comb
     begin
         can_take = 0;
-        id_take = RS_OFFSET;
+        id_take = 0;
         for(int i = RS_DEPTH-1; i >= 0; i--) begin
             for(int j = 0; j < OPERANDS; j++) begin
                 // Check if the RS is invalid or if the RS execution just finished to increase performance
                 if(  (reservation_stations_ff[i].state == INVALID) | 
                     ((reservation_stations_ff[i].state == EXECUTING) & operand_valid[j] & update_op_rs_id_in[j] == (i + RS_OFFSET))) begin
                     can_take = 1;
-                    id_take = i + RS_OFFSET;
+                    id_take = i;
                 end
             end
         end
     end
     
     assign take_ready = can_take;
-    assign id_taken = id_take;
+    assign id_taken = id_take + RS_OFFSET;
     //------------------------------------
     
     logic can_dispatch; // Designates, if an instruction can be dispatched to the unit
@@ -101,21 +101,21 @@ module reservation_station #(
     always_comb
     begin
         can_dispatch = 0;
-        id_dispatch = RS_OFFSET;
+        id_dispatch = 0;
         for(int i = RS_DEPTH-1; i >= 0; i--) begin            
             if(&reservation_stations_ff[i].op_value_valid & (reservation_stations_ff[i].state == VALID)) begin
                 can_dispatch = 1;
-                id_dispatch = i + RS_OFFSET;
+                id_dispatch = i;
             end
         end
     end
     
     assign output_valid = can_dispatch;
     for(genvar i = 0; i < OPERANDS; i++) begin
-        assign op_value_out[i] = reservation_stations_ff[id_dispatch - RS_OFFSET].op_value[i];
+        assign op_value_out[i] = reservation_stations_ff[id_dispatch].op_value[i];
     end
-    assign control_out  = reservation_stations_ff[id_dispatch - RS_OFFSET].control;
-    assign op_rs_id_out = id_dispatch;
+    assign control_out  = reservation_stations_ff[id_dispatch].control;
+    assign op_rs_id_out = id_dispatch + RS_OFFSET;
     //------------------------------------
     
     always_ff @(posedge clk)
@@ -126,24 +126,24 @@ module reservation_station #(
         else begin
             // Add the request, if an entry is available
             if(can_take && take_valid) begin
-                reservation_stations_ff[id_take - RS_OFFSET].state   <= VALID;
-                reservation_stations_ff[id_take - RS_OFFSET].control <= control_in;
+                reservation_stations_ff[id_take].state   <= VALID;
+                reservation_stations_ff[id_take].control <= control_in;
                 for(int i = 0; i < OPERANDS; i++) begin
                     // The operands needed by the instruction can either come from a register or a unit
                     if(operand_valid[i] & ~op_value_valid_in[i] & update_op_rs_id_in[i] == op_rs_id_in[i]) begin
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= 1;
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= update_op_value_in[i];
+                        reservation_stations_ff[id_take].op_value_valid[i] <= 1;
+                        reservation_stations_ff[id_take].op_value[i]       <= update_op_value_in[i];
                     end else begin
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value_valid[i] <= op_value_valid_in[i];
-                        reservation_stations_ff[id_take - RS_OFFSET].op_value[i]       <= op_value_in[i];
+                        reservation_stations_ff[id_take].op_value_valid[i] <= op_value_valid_in[i];
+                        reservation_stations_ff[id_take].op_value[i]       <= op_value_in[i];
                     end
-                    reservation_stations_ff[id_take - RS_OFFSET].op_rs_id[i] <= op_rs_id_in[i];
+                    reservation_stations_ff[id_take].op_rs_id[i] <= op_rs_id_in[i];
                 end
             end
             
             // Set the entry to EXECUTING, if it was dispatched
             if(can_dispatch && output_ready) begin
-                reservation_stations_ff[id_dispatch - RS_OFFSET].state <= EXECUTING;
+                reservation_stations_ff[id_dispatch].state <= EXECUTING;
             end
             
             for(int i = 0; i < RS_DEPTH; i++) begin
