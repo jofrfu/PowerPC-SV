@@ -40,6 +40,13 @@ module load_store_unit #(
     
     output logic[0:31] result,
 
+    output logic ea_valid,
+    input logic ea_ready,
+    output logic[0:RS_ID_WIDTH-1] ea_rs_id_out,
+    output logic[0:4] ea_reg_addr_out,
+
+    output logic[0:31] effective_address,
+
     // Interface to data cache or memory
     output logic to_mem_valid,
     input  logic to_mem_ready,
@@ -71,34 +78,15 @@ module load_store_unit #(
     logic[0:3] wen_comb, wen_ff;
     logic[0:31] write_data_comb, write_data_ff;
 
+    // Effective address output
+    logic[0:31] ea_out_ff;
+    logic ea_out_valid_ff;
+    logic[0:4] ea_reg_addr_ff;
+    logic[0:RS_ID_WIDTH-1] ea_rs_id_ff;
+
     always_comb
     begin
         // Unaligned accesses should be handled in the cache, with the help of the busy and read_data_valid signals
-        /*if(store_ff[0]) begin
-            case(control_stages_ff[0].word_size)
-                0:  
-                    begin
-                        wen_comb = 4'b1000;
-                    end
-                1:  
-                    begin
-                        wen_comb = 4'b1100;
-                    end
-                2:  
-                    begin
-                        // This case shouldn't happen!
-                        wen_comb = 4'b0000;
-                    end
-                3:  
-                    begin
-                        wen_comb = 4'b1111;
-                    end
-            endcase
-        end
-        else begin
-            wen_comb = 4'b0000;
-        end*/
-
         case(control_stages_ff[0].word_size)
             0:  
                 begin
@@ -148,17 +136,24 @@ module load_store_unit #(
     assign result               = mem_read_data;
 
 
-    logic pipe_enable[0:1];
 
-    `declare_or_reduce(2)
+    assign ea_valid             = ea_out_valid_ff;
+    assign ea_rs_id_out         = ea_rs_id_ff;
+    assign ea_reg_addr_out      = ea_reg_addr_ff;
+    assign effective_address    = ea_out_ff;
+
+
+    logic pipe_enable[0:1];
+    logic ea_enable;
 
     always_comb
     begin
+        ea_enable = (~ea_out_valid_ff & valid_stages_ff[0]) | (ea_ready & ea_out_valid_ff);
         pipe_enable[1] = (~valid_stages_ff[1] & valid_stages_ff[0]) | (to_mem_ready & valid_stages_ff[1]);
-        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (pipe_enable[1] & valid_stages_ff[0]);
+        pipe_enable[0] = (~valid_stages_ff[0] & input_valid) | (ea_enable & pipe_enable[1] & valid_stages_ff[0]);
              
         // If data can move in the pipeline, we can still take input data
-        input_ready = or_reduce(pipe_enable);
+        input_ready = pipe_enable[0] | (pipe_enable[1] & ea_enable);
     end
 
     always_ff @(posedge clk) 
@@ -192,7 +187,7 @@ module load_store_unit #(
             end
 
             if(pipe_enable[1]) begin
-                valid_stages_ff[1]              <= valid_stages_ff[0];
+                valid_stages_ff[1]              <= valid_stages_ff[0] & ea_enable;
                 rs_id_stages_ff[1]              <= rs_id_stages_ff[0];
                 result_reg_addr_stages_ff[1]    <= result_reg_addr_stages_ff[0];
                 control_stages_ff[1]            <= control_stages_ff[0];
@@ -201,6 +196,13 @@ module load_store_unit #(
                 effective_address_ff    <= effective_address_comb;
                 wen_ff                  <= wen_comb;
                 write_data_ff           <= write_data_comb;
+            end
+
+            if(ea_enable) begin
+                ea_out_valid_ff <= valid_stages_ff[0] & control_stages_ff[0].write_ea & pipe_enable[1];
+                ea_rs_id_ff     <= rs_id_stages_ff[0];
+                ea_reg_addr_ff  <= result_reg_addr_stages_ff[0];
+                ea_out_ff       <= effective_address_comb;
             end
         end    
     end
