@@ -171,6 +171,11 @@ module load_store_unit #(
             effective_address_ff    <= 32'b0;
             wen_ff                  <= 4'b0;
             write_data_ff           <= 32'b0;
+
+            ea_out_valid_ff <= 1'b0;
+            ea_rs_id_ff     <= '0;
+            ea_reg_addr_ff  <= 5'b0;
+            ea_out_ff       <= 32'b0;
         end
         else begin
 
