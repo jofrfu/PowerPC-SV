@@ -61,6 +61,15 @@ module load_store_wrapper #(
     output logic[0:31] result,
     //-----------------------------------------------------
 
+    //------ Simple ready-valid interface for effective address ------
+    output logic ea_valid,
+    input logic ea_ready,
+    output logic[0:RS_ID_WIDTH-1] ea_rs_id_out,
+    output logic[0:4] ea_reg_addr_out,
+    
+    output logic[0:31] effective_address,
+    //----------------------------------------------------------------
+
     //------ Interface to data cache or memory ------
     output logic to_mem_valid,
     input  logic to_mem_ready,
@@ -174,6 +183,13 @@ module load_store_wrapper #(
         .rs_id_out(rs_id_out),
         .result_reg_addr_out(result_reg_addr_out),
         .result(result),
+
+        .ea_valid(ea_valid),
+        .ea_ready(ea_ready),
+
+        .ea_rs_id_out(ea_rs_id_out),
+        .ea_reg_addr_out(ea_reg_addr_out),
+        .effective_address(effective_address),
 
         .to_mem_valid(to_mem_valid),
         .to_mem_ready(to_mem_ready),

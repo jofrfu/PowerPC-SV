@@ -92,7 +92,7 @@ module load_store_unit #(
                 begin
                     wen_comb = 4'b1000;
                     write_data_comb[0:7] = source_ff[24:31];
-                    write_data_comb[8:31] = 32'bx;
+                    write_data_comb[8:31] = 24'bx;
                 end
             1:  
                 begin
@@ -173,7 +173,7 @@ module load_store_unit #(
             write_data_ff           <= 32'b0;
 
             ea_out_valid_ff <= 1'b0;
-            ea_rs_id_ff     <= '0;
+            ea_rs_id_ff     <= 0;
             ea_reg_addr_ff  <= 5'b0;
             ea_out_ff       <= 32'b0;
         end
@@ -205,7 +205,8 @@ module load_store_unit #(
 
             if(ea_enable) begin
                 ea_out_valid_ff <= valid_stages_ff[0] & control_stages_ff[0].write_ea & pipe_enable[1];
-                ea_rs_id_ff     <= rs_id_stages_ff[0];
+                // RS IDs must be unique for results. Odd IDs are reserved for effective address write-backs.
+                ea_rs_id_ff     <= rs_id_stages_ff[0] + 1'b1;
                 ea_reg_addr_ff  <= result_reg_addr_stages_ff[0];
                 ea_out_ff       <= effective_address_comb;
             end

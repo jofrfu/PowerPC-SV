@@ -16,6 +16,8 @@
 
 module gp_reg_file #(
     parameter int READ_PORTS = 1,
+    parameter int WRITE_PORTS = 1,
+    parameter int UPDATE_PORTS = 1,
     parameter int RS_ID_WIDTH = 5
 )(
     input logic clk,
@@ -29,16 +31,16 @@ module gp_reg_file #(
     output logic[0:RS_ID_WIDTH-1]   read_rs_id[0:READ_PORTS-1],
     
     // The write port stores the result of units
-    input logic[0:4]                write_addr,
-    input logic                     write_enable,
-    input logic[0:31]               write_value,
-    input logic[0:RS_ID_WIDTH-1]    write_rs_id,
+    input logic[0:4]                write_addr[0:WRITE_PORTS-1],
+    input logic                     write_enable[0:WRITE_PORTS-1],
+    input logic[0:31]               write_value[0:WRITE_PORTS-1],
+    input logic[0:RS_ID_WIDTH-1]    write_rs_id[0:WRITE_PORTS-1],
     
     // The update port is used to invalidate data and assign the ID of the reservation station
     // which currently calculates the content of that register
-    input logic[0:4]                update_addr,
-    input logic                     update_enable,
-    input logic[0:RS_ID_WIDTH-1]    update_rs_id
+    input logic[0:4]                update_addr[0:UPDATE_PORTS-1],
+    input logic                     update_enable[0:UPDATE_PORTS-1],
+    input logic[0:RS_ID_WIDTH-1]    update_rs_id[0:UPDATE_PORTS-1]
 );
     
     typedef struct packed {
@@ -65,16 +67,20 @@ module gp_reg_file #(
             registers_ff <= '{default: '{default: '0}};
         end
         else begin
-            if(write_enable & registers_ff[write_addr].rs_id == write_rs_id) begin
-                // Write and validate the register content
-                registers_ff[write_addr].value          <= write_value;
-                registers_ff[write_addr].value_valid    <= 1;
+            for(int i = 0; i < WRITE_PORTS; i++) begin
+                if(write_enable[i] & registers_ff[write_addr[i]].rs_id == write_rs_id[i]) begin
+                    // Write and validate the register content
+                    registers_ff[write_addr[i]].value       <= write_value[i];
+                    registers_ff[write_addr[i]].value_valid <= 1;
+                end
             end
             
-            if(update_enable) begin
-                // Invalidate the register content and update the reservation station ID
-                registers_ff[update_addr].value_valid   <= 0;
-                registers_ff[update_addr].rs_id         <= update_rs_id;
+            for(int i = 0; i < UPDATE_PORTS; i++) begin
+                if(update_enable[i]) begin
+                    // Invalidate the register content and update the reservation station ID
+                    registers_ff[update_addr[i]].value_valid    <= 0;
+                    registers_ff[update_addr[i]].rs_id          <= update_rs_id[i];
+                end
             end
         end
     end

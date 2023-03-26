@@ -69,6 +69,7 @@ module ppc_core (
 
     logic[0:RS_ID_WIDTH-1] id_taken;
     logic write_to_gpr;
+    logic write_ea;
     logic write_to_spr;
     logic write_to_cr;
     logic alter_xer;
@@ -140,12 +141,14 @@ module ppc_core (
     logic[0:31] gpr_write_value;
     logic[0:RS_ID_WIDTH-1] gpr_write_rs_id;
     // GPR RS ID update port
-    logic[0:4] gpr_update_addr;
-    logic gpr_update_enable;
-    logic[0:RS_ID_WIDTH-1] gpr_update_rs_id;
+    logic[0:4] gpr_update_addr[0:1];
+    logic gpr_update_enable[0:1];
+    logic[0:RS_ID_WIDTH-1] gpr_update_rs_id[0:1];
 
     gp_reg_file #(
         .READ_PORTS(3),
+        .WRITE_PORTS(1),
+        .UPDATE_PORTS(2),
         .RS_ID_WIDTH(RS_ID_WIDTH)
     ) GPRs (
         .clk(clk),
@@ -156,10 +159,10 @@ module ppc_core (
         .read_value(gpr_read_value),
         .read_rs_id(gpr_read_rs_id),
 
-        .write_addr(gpr_write_addr),
-        .write_enable(gpr_write_enable),
-        .write_value(gpr_write_value),
-        .write_rs_id(gpr_write_rs_id),
+        .write_addr('{gpr_write_addr}),
+        .write_enable('{gpr_write_enable}),
+        .write_value('{gpr_write_value}),
+        .write_rs_id('{gpr_write_rs_id}),
 
         .update_addr(gpr_update_addr),
         .update_enable(gpr_update_enable),
@@ -244,9 +247,14 @@ module ppc_core (
     assign gpr_op2_rs_id = gpr_read_rs_id[1];
     assign gpr_target_rs_id = gpr_read_rs_id[2];
 
-    assign gpr_update_addr = decode.fixed_point.control.result_reg_address;
-    assign gpr_update_enable = write_to_gpr & decode_valid & decode_ready;
-    assign gpr_update_rs_id = id_taken;
+    assign gpr_update_addr[0] = decode.fixed_point.control.result_reg_address;
+    assign gpr_update_enable[0] = write_to_gpr & decode_valid & decode_ready;
+    assign gpr_update_rs_id[0] = id_taken;
+
+    // This port is currently exclusive to effective address updates
+    assign gpr_update_addr[1] = decode.fixed_point.control.op1_reg_address;
+    assign gpr_update_enable[1] = write_ea & decode_valid & decode_ready;
+    assign gpr_update_rs_id[1] = id_taken + 1'b1;
 
     always_comb
     begin
@@ -296,12 +304,12 @@ module ppc_core (
     end
 
     // Write back signals per unit going to the GPR arbiter. TODO: Add all the units
-    logic arbiter_valid[0:6];
-    logic arbiter_ready[0:6];
-    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:6];
-    logic[0:4] arbiter_result_reg_addr[0:6];
-    logic[0:31] arbiter_result[0:6];
-    cond_exception_t arbiter_cr0_xer[0:6];
+    logic arbiter_valid[0:7];
+    logic arbiter_ready[0:7];
+    logic[0:RS_ID_WIDTH-1] arbiter_rs_id[0:7];
+    logic[0:4] arbiter_result_reg_addr[0:7];
+    logic[0:31] arbiter_result[0:7];
+    cond_exception_t arbiter_cr0_xer[0:7];
 
     logic arbiter_spr_valid;
     logic arbiter_spr_ready;
@@ -566,6 +574,12 @@ module ppc_core (
         .result_reg_addr_out(arbiter_result_reg_addr[5]),
         .result(arbiter_result[5]),
 
+        .ea_valid(arbiter_valid[6]),
+        .ea_ready(arbiter_ready[6]),
+        .ea_rs_id_out(arbiter_rs_id[6]),
+        .ea_reg_addr_out(arbiter_result_reg_addr[6]),
+        .effective_address(arbiter_result[6]),
+
         .to_mem_valid(to_mem_valid),
         .to_mem_ready(to_mem_ready),
         .to_mem_rs_id(to_mem_rs_id),
@@ -715,11 +729,11 @@ module ppc_core (
         .update_cr_op_rs_id_in(cr_write_rs_id),
         .update_cr_op_value_in({cr_write_value[0:3], cr_write_value[4:7], cr_write_value[8:11], cr_write_value[12:15], cr_write_value[16:19], cr_write_value[20:23], cr_write_value[24:27], cr_write_value[28:31]}),
 
-        .gpr_output_valid(arbiter_valid[6]),
-        .gpr_output_ready(arbiter_ready[6]),
-        .gpr_rs_id_out(arbiter_rs_id[6]),
-        .gpr_result_reg_addr_out(arbiter_result_reg_addr[6]),
-        .gpr_result(arbiter_result[6]),
+        .gpr_output_valid(arbiter_valid[7]),
+        .gpr_output_ready(arbiter_ready[7]),
+        .gpr_rs_id_out(arbiter_rs_id[7]),
+        .gpr_result_reg_addr_out(arbiter_result_reg_addr[7]),
+        .gpr_result(arbiter_result[7]),
 
         .spr_output_valid(arbiter_spr_valid),
         .spr_output_ready(arbiter_spr_ready),
@@ -763,7 +777,7 @@ module ppc_core (
 
     simple_write_back_arbiter #(
         .RS_ID_WIDTH(RS_ID_WIDTH),
-        .ARBITER_DEPTH(7)
+        .ARBITER_DEPTH(8)
     ) ARBITER (
         .clk(clk),
         .rst(rst),

@@ -25,6 +25,7 @@ module dispatcher#(
     input decode_result_t decode,
     output logic[0:RS_ID_WIDTH-1] id_taken,
     output logic write_to_gpr,
+    output logic write_ea,
     output logic write_to_spr,
     output logic write_to_cr,
     output logic alter_xer,
@@ -112,6 +113,7 @@ module dispatcher#(
                     load_store_valid = input_valid;
                     id_taken = load_store_id;
                     write_to_gpr = 1;
+                    write_ea = load_store_decode.write_ea;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = 0;
@@ -125,6 +127,7 @@ module dispatcher#(
                     load_store_valid = input_valid;
                     id_taken = load_store_id;
                     write_to_gpr = 0;
+                    write_ea = load_store_decode.write_ea;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = 0;
@@ -139,6 +142,7 @@ module dispatcher#(
                     add_sub_valid = input_valid;
                     id_taken = add_sub_id;
                     write_to_gpr = 1;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = add_sub_decode.alter_OV | add_sub_decode.alter_CA;
@@ -151,6 +155,7 @@ module dispatcher#(
                     mul_valid = input_valid;
                     id_taken = mul_id;
                     write_to_gpr = 1;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = mul_decode.alter_OV;
@@ -163,6 +168,7 @@ module dispatcher#(
                     div_valid = input_valid;
                     id_taken = div_id;
                     write_to_gpr = 1;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = div_decode.alter_OV;
@@ -175,6 +181,7 @@ module dispatcher#(
                     cmp_valid = input_valid;
                     id_taken = cmp_id;
                     write_to_gpr = 0;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 1;
                     alter_xer  = 0;
@@ -187,6 +194,7 @@ module dispatcher#(
                     trap_valid = input_valid;
                     id_taken = trap_id;
                     write_to_gpr = 0;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
@@ -199,6 +207,7 @@ module dispatcher#(
                     log_valid = input_valid;
                     id_taken = log_id;
                     write_to_gpr = 1;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
@@ -211,6 +220,7 @@ module dispatcher#(
                     rot_valid = input_valid;
                     id_taken = rot_id;
                     write_to_gpr = 1;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer = rot_decode.shift & ~rot_decode.left & rot_decode.sign_extend;
@@ -223,6 +233,7 @@ module dispatcher#(
                     sys_valid = input_valid;
                     id_taken = sys_id;
                     write_to_gpr = (sys_decode.operation == SYS_MOVE_FROM_SPR) | (sys_decode.operation == SYS_MOVE_FROM_CR);
+                    write_ea = 0;
                     write_to_spr = sys_decode.operation == SYS_MOVE_TO_SPR;
                     write_to_cr = sys_decode.operation == SYS_MOVE_TO_CR;
                     alter_xer  = 0;
@@ -235,6 +246,7 @@ module dispatcher#(
                     input_ready = 1;
                     id_taken = 0;
                     write_to_gpr = 0;
+                    write_ea = 0;
                     write_to_spr = 0;
                     write_to_cr = 0;
                     alter_xer  = 0;
