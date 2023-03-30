@@ -51,7 +51,9 @@ module instruction_decode(
         MDS_form_t MDS_form = logic_to_MDS_form(instruction);
         //-----------------------------------------------------
         
-        decode_comb = '{default: '{default: '0}};
+        decode_comb = '{default: '{default: 'x}};
+        decode_comb.branch.execute = EXEC_BRANCH_NONE;
+        decode_comb.fixed_point.execute = EXEC_FIXED_NONE;
         
         case(I_form.OPCD)
             // B Form Branch instructions
@@ -362,7 +364,8 @@ module instruction_decode(
                     597: // lswi
                         begin
                             if(X_form.RA == 0) begin
-                                decode_comb.fixed_point.control.op1_use_imm = 1;	// immediate is zero by default																			
+                                decode_comb.fixed_point.control.op1_immediate = 0;
+                                decode_comb.fixed_point.control.op1_use_imm = 1;																		
                             end else begin																				
                                 decode_comb.fixed_point.control.op1_reg_address = X_form.RA;						
                             end
@@ -389,7 +392,8 @@ module instruction_decode(
                     725: // stswi
                         begin
                             if(X_form.RA == 0) begin
-                                decode_comb.fixed_point.control.op1_use_imm = 1;	// immediate is zero by default																			
+                                decode_comb.fixed_point.control.op1_immediate = 0;
+                                decode_comb.fixed_point.control.op1_use_imm = 1;																		
                             end else begin																				
                                 decode_comb.fixed_point.control.op1_reg_address = X_form.RA;						
                             end
@@ -449,7 +453,8 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.add_sub.subtract = 1;
                             decode_comb.fixed_point.control.op1_reg_address = XO_form.RA;
-                            decode_comb.fixed_point.control.op2_use_imm = 1; // immediate is zero by default
+                            decode_comb.fixed_point.control.op2_immediate = 0;
+                            decode_comb.fixed_point.control.op2_use_imm = 1;
                             decode_comb.fixed_point.control.result_reg_address = XO_form.RT;
                             decode_comb.fixed_point.add_sub.alter_CR0 = XO_form.Rc;
                             decode_comb.fixed_point.add_sub.alter_OV = XO_form.OE;
@@ -485,7 +490,8 @@ module instruction_decode(
                             
                             decode_comb.fixed_point.add_sub.subtract = 1;
                             decode_comb.fixed_point.control.op1_reg_address = XO_form.RA;
-                            decode_comb.fixed_point.control.op2_use_imm = 1; // immediate is zero by default
+                            decode_comb.fixed_point.control.op2_immediate = 0;
+                            decode_comb.fixed_point.control.op2_use_imm = 1;
                             decode_comb.fixed_point.control.result_reg_address = XO_form.RT;
                             decode_comb.fixed_point.add_sub.alter_CA = 1;
                             decode_comb.fixed_point.add_sub.alter_CR0 = XO_form.Rc;
@@ -497,7 +503,8 @@ module instruction_decode(
                             decode_comb.fixed_point.execute = EXEC_ADD_SUB;
                             
                             decode_comb.fixed_point.control.op1_reg_address = XO_form.RA;
-                            decode_comb.fixed_point.control.op2_use_imm = 1; // immediate is zero by default
+                            decode_comb.fixed_point.control.op2_immediate = 0;
+                            decode_comb.fixed_point.control.op2_use_imm = 1;
                             decode_comb.fixed_point.control.result_reg_address = XO_form.RT;
                             decode_comb.fixed_point.add_sub.alter_CA = 1;
                             decode_comb.fixed_point.add_sub.alter_CR0 = XO_form.Rc;
@@ -952,7 +959,8 @@ module instruction_decode(
                     decode_comb.fixed_point.execute = EXEC_ADD_SUB;
                     
                     if(D_form.RA == 0) begin
-                        decode_comb.fixed_point.control.op1_use_imm = 1; // Immediate is zero by default
+                        decode_comb.fixed_point.control.op1_immediate = 0;
+                        decode_comb.fixed_point.control.op1_use_imm = 1;
                     end else begin
                         decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
                     end
@@ -966,7 +974,8 @@ module instruction_decode(
                     decode_comb.fixed_point.execute = EXEC_ADD_SUB;
                     
                     if(D_form.RA == 0) begin
-                        decode_comb.fixed_point.control.op1_use_imm = 1; // Immediate is zero by default
+                        decode_comb.fixed_point.control.op1_immediate = 0;
+                        decode_comb.fixed_point.control.op1_use_imm = 1;
                     end else begin
                         decode_comb.fixed_point.control.op1_reg_address = D_form.RA;
                     end
