@@ -30,8 +30,11 @@ module branch_unit(
     
     output logic output_valid,
     input logic output_ready,
+    output logic nia_valid,
     output logic[0:31] nia_out,
+    output logic link_reg_valid,
     output logic[0:31] link_reg_out,
+    output logic count_reg_valid,
     output logic[0:31] count_reg_out,
 
     // Marks all new incoming instructions as speculative
@@ -43,6 +46,11 @@ module branch_unit(
 );
 
     logic[0:31] nia_ext;
+    logic[0:31] count_reg;
+    logic ctr_ok, cond_ok;
+    
+    assign ctr_ok = control.BO[2] | ((count_reg != 32'b0) ^ control.BO[3]);
+    assign cond_ok = control.BO[0] | (cond_reg_in[control.BI[3:4]] ^ ~control.BO[1]);
 
     always_comb
     begin
@@ -59,23 +67,95 @@ module branch_unit(
                     nia_out = nia_ext + cia_in;
                 end
 
-                // Don't care about link and count
-                link_reg_out = 32'bx;
+                nia_valid = 1'b1;
+
+                // Don't cares
+                count_reg_valid = 1'b0;
                 count_reg_out = 32'bx;
             end
             BRANCH_CONDITIONAL:
             begin
+                // Sign extend
+                nia_ext = {16{control.BD[0]}, control.BD, 2'b0};
 
+                if(control.BO[2] == 1'b0) begin
+                    count_reg_valid = 1'b1;
+                    // Decrement counter
+                    count_reg = count_reg_in - 1'b1;
+                end
+                else begin
+                    count_reg_valid = 1'b0;
+                    count_reg = count_reg_in;
+                end
+                
+                if(ctr_ok && cond_ok) begin
+                    nia_valid = 1'b1;
+                    if (control.AA) begin
+                        nia_out = nia_ext;
+                    end
+                    else begin
+                        nia_out = cia_in + nia_ext;
+                    end
+                end
+                else begin
+                    nia_valid = 1'b0;
+                    nia_out = 32'bx;
+                end
+
+                count_reg_out = count_reg;
             end
             BRANCH_CONDITIONAL_LINK:
             begin
+                if(control.BO[2] == 1'b0) begin
+                    count_reg_valid = 1'b1;
+                    // Decrement counter
+                    count_reg = count_reg_in - 1'b1;
+                end
+                else begin
+                    count_reg_valid = 1'b0;
+                    count_reg = count_reg_in;
+                end
+                
+                if(ctr_ok && cond_ok) begin
+                    nia_valid = 1'b1;
+                    nia_out = {link_reg_in[0:29], 2'b00};
+                end
+                else begin
+                    nia_valid = 1'b0;
+                    nia_out = 32'bx;
+                end
 
+                count_reg_out = count_reg;
+
+                // Don't cares
+                nia_ext = 32'bx
             end
             BRANCH_CONDITIONAL_COUNT:
             begin
+                if(cond_ok) begin
+                    nia_valid = 1'b1;
+                    nia_out = count_reg_in[0:29, 2'b00];
+                end
+                else begin
+                    nia_valid = 1'b0;
+                    nia_out = 32'bx;
+                end
 
+                // Don't cares
+                count_reg_valid = 1'b0;
+                count_reg_out = 32'bx;
+                nia_ext = 32'bx
             end
         endcase
+
+        if(control.LK) begin
+            link_reg_valid = 1'b1;
+            link_reg_out = cia_in + 4;
+        end
+        else begin
+            link_reg_valid = 1'b0;
+            link_reg_out = 32'bx;
+        end
     end
 
 
