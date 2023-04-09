@@ -35,14 +35,7 @@ module branch_unit(
     output logic link_reg_valid,
     output logic[0:31] link_reg_out,
     output logic count_reg_valid,
-    output logic[0:31] count_reg_out,
-
-    // Marks all new incoming instructions as speculative
-    output logic speculative,
-    // Marks all marked instructions as non-sepculative
-    output logic clear_speculative,
-    // Flushes all speculative instructions in the pipeline
-    output logic flush_speculative
+    output logic[0:31] count_reg_out
 );
 
     logic[0:31] nia_ext;
